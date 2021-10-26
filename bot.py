@@ -368,7 +368,7 @@ def toValidDecimal(val):
     except InvalidOperation:
         return None
 
-"""
+
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, UserBannedError):
@@ -378,5 +378,5 @@ async def on_command_error(ctx, error):
         await ctx.send(f"{ctx.message} is not a valid command.")
         return
     await (await bot.fetch_channel(900027403919839282)).send(str(error))
-"""
+
 bot.run(TOKEN)
