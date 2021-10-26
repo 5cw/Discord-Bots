@@ -89,7 +89,6 @@ PySocks==1.7.1
 pytest==6.1.1
 python-dateutil==2.8.1
 pytz==2019.3
-pywinpty==1.1.4
 pyzmq==22.2.1
 qtconsole==5.1.1
 QtPy==1.10.0
@@ -110,7 +109,6 @@ tornado==6.1
 tox==3.20.0
 tqdm==4.45.0
 traitlets==5.1.0
-twint==2.1.4
 uritemplate==4.1.1
 urllib3==1.25.9
 virtualenv==20.0.33
