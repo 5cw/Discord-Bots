@@ -156,10 +156,10 @@ async def sync(ctx, *args):
     fetchCache()
     await ctx.send("The bot is in sync with the spreadsheet.")
 
-@bot.command(name='balance', help='check your cool dollar balance',
-             usage='[name] (only admins may see others\' balances)')
+@bot.command(name='balance', help='check your or others\' cool dollar balances',
+             usage='[name]')
 async def balance(ctx, *args):
-    if len(args) != 0 and isAdmin(ctx.author):
+    if len(args) != 0:
         user = await toUser(ctx, ' '.join(args))
         if user is None:
             await ctx.send(f"{args[0]} is not a valid money haver")
