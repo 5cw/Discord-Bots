@@ -36,8 +36,7 @@ google-auth==2.3.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==0.4.6
 googleapis-common-protos==1.53.0
-gpt-2-simple==0.7.1
-gspread=4.0.1
+gspread==4.0.1
 httplib2==0.20.1
 idna==2.9
 iniconfig==1.0.1
