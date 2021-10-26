@@ -150,8 +150,7 @@ async def setup(ctx, *args):
     pushCache()
 
 
-@bot.command(name='sync', help='sync the spreadsheet with the bot',
-             usage=' (only admins may sync)')
+@bot.command(name='sync', hidden=True)
 async def sync(ctx, *args):
     fetchCache()
     await ctx.send("The bot is in sync with the spreadsheet.")
