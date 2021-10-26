@@ -1,13 +1,9 @@
-import pickle
+
 import time
 
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
 
 startTime = time.time()
-import os
 
 import discord
 from discord.ext import commands
