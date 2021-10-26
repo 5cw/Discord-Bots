@@ -8,6 +8,7 @@ startTime = time.time()
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from decimal import *
 
 import os.path
 
@@ -42,7 +43,7 @@ gc = gspread.service_account(filename='cool-dollars-687de25f7d88.json', scopes=[
     'https://www.googleapis.com/auth/drive',
 ])
 sh = gc.open_by_key(SPREADSHEET_ID, )
-
+getcontext().prec = 2
 
 @bot.command(name='award', help='admins can award cool dollars at their leisure.',
              usage= '(name) (amount)')
@@ -59,25 +60,26 @@ async def award(ctx, *args):
         return
     amount = None
     try:
-        amount = float(args[-1])
-    except ValueError:
+        amount = Decimal(args[-1])
+    except decimal.InvalidOperation:
         await ctx.send(f"{args[1]} is not a valid amount of Cool Dollars")
         return
-    bal = getBalance(user.id)
+    bal = getBalance(user)
     if bal is None:
-        await newUser(user.id)
+        newUser(user)
         bal = 25
-    await setBalance(user.id, bal + amount)
-    await ctx.send(f"Awarded {args[-1]} Cool Dollars to {await getName(user.id)}")
+    new_bal = bal + amount
+    await setBalance(user, new_bal)
+    await ctx.send(f"Awarded {amount:.2f} Cool Dollars to {await getName(user)}")
 
 @bot.command(name='setup', help='set up your cool dollar account',
              usage='[name]')
 async def setup(ctx, *args):
-    await newUser(ctx.author.id)
+    await newUser(ctx.author)
     if len(args) == 0:
         return
     name = ' '.join(args)
-    sh.worksheet("Balances").update_cell(await idIndex(ctx.author.id), 1, name)
+    sh.worksheet("Balances").update_cell(userIndex(ctx.author), 1, name)
 
 
 @bot.command(name='balance', help='check your cool dollar balance',
@@ -92,17 +94,16 @@ async def balance(ctx, *args):
     else:
         user = ctx.author
 
-    bal = getBalance(user.id)
-    if bal is None:
-        await newUser(user.id)
-        bal = 25.0
-    await ctx.send(f"{await getName(user.id)} has {bal:.2f} Cool Dollars")
+    bal = getBalance(user)
+    await ctx.send(f"{await getName(user)} has {bal:.2f} Cool Dollars")
 
 
 @bot.command(name='edit', hidden=True)
 async def edit(ctx, *args):
-    if ctx.author.id == 999999999999999999:
-        await setBalance(args[0], float(args[1]))
+    if isAdmin(ctx.author):
+        edited = await toUser(ctx, args[0])
+        if edited is not None:
+            await setBalance(edited, Decimal(args[1]))
 
 
 @bot.command(name='test', hidden=True)
@@ -122,27 +123,15 @@ async def pay(ctx, *args):
     if rec_user is None:
         await ctx.send(f"{name} is not a valid recipient")
         return
-    amount = None
     try:
-        amount = float(args[-1])
-    except ValueError:
+        amount = Decimal(args[-1])
+    except decimal.InvalidOperation:
         await ctx.send(f"{args[-1]} is not a valid amount of Cool Dollars")
         return
 
-    receiver = str(rec_user.id)
 
-    print(receiver)
-    send_balance = getBalance(sender)
-    if send_balance is None:
-        await newUser(sender)
-        send_balance = 25.0
-    rec_balance = getBalance(receiver)
-    if rec_balance is None:
-        await newUser(receiver)
-        rec_balance = 25.0
-    if amount is None:
-        await ctx.send(f"That is not valid amount of Cool Dollars")
-        return
+    send_balance = getBalance(ctx.author)
+    rec_balance = getBalance(ctx.author)
     amount = round(amount, 2)
 
     if amount <= 0:
@@ -152,9 +141,9 @@ async def pay(ctx, *args):
     if amount > send_balance:
         await ctx.send(f"{amount:.2f} is more than your current balance, {send_balance:.2f}")
         return
-    await setBalance(sender, send_balance - amount)
-    await setBalance(receiver, rec_balance + amount)
-    await ctx.send(f"{amount:.2f} was sent to {await getName(rec_user.id)}")
+    await setBalance(ctx.author, send_balance - amount)
+    await setBalance(rec_user, rec_balance + amount)
+    await ctx.send(f"{amount:.2f} was sent to {await getName(rec_user)}")
 
 
 @bot.command(name='name', help='change or set your name in the spreadsheet',
@@ -162,57 +151,54 @@ async def pay(ctx, *args):
                    '$name [new_name] to change names')
 async def name(ctx, *args):
     if len(args) == 0:
-        name = getName(ctx.author.id)
+        name = getName(ctx.author)
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
         return
     name = ' '.join(args)
-    sh.worksheet("Balances").update_cell(await idIndex(ctx.author.id), 1, name)
+    sh.worksheet("Balances").update_cell(userIndex(ctx.author), 1, name)
     await ctx.send(f"Your name was was set to {name}")
 
 
-async def getName(id):
-    return sh.worksheet("Balances").cell(await idIndex(id), 1).value
+async def getName(user):
+    return sh.worksheet("Balances").cell(userIndex(user), 1).value
 
 
-async def setBalance(id, new_balance):
-    idx = await idIndex(id)
-    sh.worksheet("Balances").update_cell(idx, 2, new_balance)
+async def setBalance(user, new_balance):
+    idx = userIndex(user)
+    sh.worksheet("Balances").update_cell(idx, 2, str(new_balance))
 
 
-def getBalance(id):
+def getBalance(user):
     balances = getBalances()
     try:
-        return float(balances.get(str(id)))
+        return Decimal(balances.get(str(user.id)))
     except TypeError:
-        return None
+        newUser(user)
+        return Decimal("25.00")
 
 
 def getBalances():
     return dict(zip(sh.worksheet("bts").col_values(1), sh.worksheet("Balances").col_values(2)))
 
 
-async def idIndex(id):
+def userIndex(user):
     ids = sh.worksheet("bts").col_values(1)
     idx = None
     try:
-        idx = ids.index(str(id))
+        idx = ids.index(str(user.id))
     except ValueError:
-        await newUser(id)
+        newUser(user)
         ids = sh.worksheet("bts").col_values(1)
-        idx = ids.index(id)
+        idx = ids.index(str(user.id))
     return idx + 1
 
 
-async def newUser(id):
-    name = str(await bot.fetch_user(id))
-    sh.worksheet("bts").append_row([str(id)])
-    data = sh.worksheet("Balances").append_row([name, 25.00])
-    range = data['updates']['updatedRange'].split(":")[1]
-    sh.worksheet("Balances").format(range, {"numberFormat": {
-        "type": "NUMBER",
-        "pattern": "0.00"
-    }})
+def newUser(user):
+    name = str(user)
+    sh.worksheet("bts").append_row([str(user.id)])
+    data = sh.worksheet("Balances").append_row([name, "25.00"])
+
 
 
 def isAdmin(user):
@@ -229,4 +215,8 @@ async def toUser(ctx, name):
             return await bot.fetch_user(int(ids[names.index(name)]))
         except ValueError:
             return None
+
+@bot.event
+async def on_command_error(ctx, error):
+    await (await bot.fetch_channel(900027403919839282)).send(str(error))
 bot.run(TOKEN)
