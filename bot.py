@@ -375,7 +375,7 @@ async def on_command_error(ctx, error):
         await ctx.send("That user is banned. They cannot participate in the economy unless an admin uses $unban on them.")
         return
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.send(f"{ctx.message} is not a valid command.")
+        await ctx.send(f"{ctx.message.content} is not a valid command.")
         return
     await (await bot.fetch_channel(900027403919839282)).send(str(error))
 
