@@ -398,8 +398,10 @@ def sanitize(ctx, input):
 
     return re.sub(r'<?(@|@!|#|@&|a?(:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_helper, input)
 
-
-log_errors_in_channel = False
+print(os.name)
+import sys
+print(sys.platform)
+log_errors_in_channel = True
 if log_errors_in_channel:
     @bot.event
     async def on_command_error(ctx, error):
