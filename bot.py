@@ -160,8 +160,8 @@ async def sync(ctx, *args):
 
 @bot.command(name='balance', help='check your or others\' cool dollar balances',
              usage='[name]')
-async def balance(ctx, *, args):
-    if len(args) != 0:
+async def balance(ctx, *, args=None):
+    if args is None:
         user = await toUser(ctx, args)
         if user is None:
             name = sanitize(args)
