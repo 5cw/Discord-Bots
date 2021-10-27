@@ -116,7 +116,7 @@ async def award(ctx, *args):
         return
     print(cache)
     name = ' '.join(args[:-1])
-    user = await toUser(ctx, name)
+    user = toUser(ctx, name)
     if user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid awardee")
@@ -164,7 +164,7 @@ async def sync(ctx, *args):
              usage='[name]')
 async def balance(ctx, *, args=None):
     if args is not None:
-        user = await toUser(ctx, args)
+        user = toUser(ctx, args)
         if user is None:
             name = sanitize(ctx, args)
             await ctx.send(f"{name} is not a valid money haver")
@@ -179,7 +179,7 @@ async def balance(ctx, *, args=None):
 @bot.command(name='edit', hidden=True)
 async def edit(ctx, *args):
     if isAdmin(ctx.author):
-        edited = await toUser(ctx, args[0])
+        edited = toUser(ctx, args[0])
         if edited is not None:
             await setBalance(edited, Decimal(args[1]))
             pushCache()
@@ -198,7 +198,7 @@ async def pay(ctx, *args):
         return
     sender = str(ctx.author.id)
     name = ' '.join(args[:-1])
-    rec_user = await toUser(ctx, name)
+    rec_user = toUser(ctx, name)
     if rec_user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid recipient")
@@ -251,7 +251,7 @@ async def name(ctx, *, name=None):
 async def ban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
-    ban_user = await toUser(ctx, name)
+    ban_user = toUser(ctx, name)
     if ban_user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid user to ban")
@@ -276,7 +276,7 @@ async def ban(ctx, *, name=""):
 async def unban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
-    ban_user = await toUser(ctx, name)
+    ban_user = toUser(ctx, name)
     if ban_user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid user.")
@@ -373,7 +373,7 @@ def toValidDecimal(val):
     try:
         amount = Decimal(val)
         if amount.is_nan() or amount.is_infinite() or amount.is_subnormal():
-            raise InvalidOperation
+            return None
         amount = Decimal(amount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
         return amount
     except InvalidOperation:
