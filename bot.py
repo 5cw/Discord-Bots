@@ -19,6 +19,8 @@ SPREADSHEET_ID = os.getenv('SPREADSHEET_ID')
 
 intents = discord.Intents.default()
 intents.members = True
+intents.guilds = True
+
 bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands.DefaultHelpCommand(
     no_category='Commands'
 ))
@@ -116,12 +118,12 @@ async def award(ctx, *args):
     name = ' '.join(args[:-1])
     user = await toUser(ctx, name)
     if user is None:
-        name = sanitize(name)
+        name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid awardee")
         return
     amount = toValidDecimal(args[-1])
     if amount is None:
-        amount = sanitize(args[-1])
+        amount = sanitize(ctx, args[-1])
         await ctx.send(f"{amount} is not a valid amount of Cool Dollars")
         return
     bal = await getBalance(user)
@@ -164,7 +166,7 @@ async def balance(ctx, *, args=None):
     if args is not None:
         user = await toUser(ctx, args)
         if user is None:
-            name = sanitize(args)
+            name = sanitize(ctx, args)
             await ctx.send(f"{name} is not a valid money haver")
             return
     else:
@@ -198,14 +200,14 @@ async def pay(ctx, *args):
     name = ' '.join(args[:-1])
     rec_user = await toUser(ctx, name)
     if rec_user is None:
-        name = sanitize(name)
+        name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid recipient")
         return
 
     amount = toValidDecimal(args[-1])
 
     if amount is None:
-        amount = sanitize(args[-1])
+        amount = sanitize(ctx, args[-1])
         await ctx.send(f"{amount} is not a valid amount of Cool Dollars")
         return
     if rec_user.id == ctx.author.id:
@@ -236,7 +238,7 @@ async def name(ctx, *, name=None):
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
         return
-    name = sanitize(name)
+    name = sanitize(ctx, name)
     await lock(ctx.author)
     cache["names"][userIndex(ctx.author)] = name
     await ctx.send(f"Your name was was set to {name}")
@@ -251,7 +253,7 @@ async def ban(ctx, *, name=""):
         return
     ban_user = await toUser(ctx, name)
     if ban_user is None:
-        name = sanitize(name)
+        name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid user to ban")
         return
     if ban_user.id in cache["banned"]:
@@ -276,7 +278,7 @@ async def unban(ctx, *, name=""):
         return
     ban_user = await toUser(ctx, name)
     if ban_user is None:
-        name = sanitize(name)
+        name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid user.")
         return
     if ban_user.id not in cache["banned"]:
@@ -362,7 +364,7 @@ async def toUser(ctx, name):
         return await converter.convert(ctx, name)
     except commands.UserNotFound:
         try:
-            return await bot.fetch_user(cache["ids"][cache["names"].index(name)])
+            return await bot.get_user(cache["ids"][cache["names"].index(name)])
         except ValueError:
             return None
 
@@ -377,16 +379,28 @@ def toValidDecimal(val):
     except InvalidOperation:
         return None
 
-def sanitize(input):
-    return re.sub(r'<?(@|@!|#|@&|(a?:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_instance, input)
+def sanitize(ctx, input):
+    def sanitize_helper(m):
+        nf = "not_found"
+        id = int(m.group(3))
+        if m.group(1)[0] == "@":
+            if len(m.group(1)) > 1 and m.group(1)[1] == "&":
+                sec = m.group(1)[1]
+                role = ctx.guild.get_role(id) or nf
+                return f"@{role}"
+            else:
+                user = bot.get_user(id) or nf
+                return f"@{user}"
+        elif m.group(1) == "#":
+            channel = bot.get_channel(id) or nf
+            return f"#{channel}"
+        else:
+            return m.group(2)
 
-def sanitize_instance(mention):
-    if mention.group(1)[0] == "@":
-        return "@disallowed"
-    elif mention.group(1) == "#":
-        return "#disallowed"
-    else:
-        return ":disallowed:"
+    return re.sub(r'<?(@|@!|#|@&|a?(:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_helper, input)
+
+
+
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -394,7 +408,7 @@ async def on_command_error(ctx, error):
         await ctx.send("That user is banned. They cannot participate in the economy unless an admin uses $unban on them.")
         return
     elif isinstance(error, commands.CommandNotFound):
-        content = sanitize(ctx.message.content)
+        content = sanitize(ctx, ctx.message.content)
         await ctx.send(f"{content} is not a valid command.")
         return
     elif isinstance(error, commands.ArgumentParsingError):
