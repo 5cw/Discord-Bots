@@ -231,7 +231,7 @@ async def pay(ctx, *args):
              usage='to see your current name\n'
                    '$name [new_name] to change names')
 async def name(ctx, *, name=None):
-    if name is None:
+    if name is None or name == "":
         name = await getName(ctx.author)
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
