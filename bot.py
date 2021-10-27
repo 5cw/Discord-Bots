@@ -116,11 +116,13 @@ async def award(ctx, *args):
     name = ' '.join(args[:-1])
     user = await toUser(ctx, name)
     if user is None:
+        name = sanitize(name)
         await ctx.send(f"{name} is not a valid awardee")
         return
     amount = toValidDecimal(args[-1])
     if amount is None:
-        await ctx.send(f"{args[-1]} is not a valid amount of Cool Dollars")
+        amount = sanitize(args[-1])
+        await ctx.send(f"{amount} is not a valid amount of Cool Dollars")
         return
     bal = await getBalance(user)
     if bal is None:
@@ -158,11 +160,12 @@ async def sync(ctx, *args):
 
 @bot.command(name='balance', help='check your or others\' cool dollar balances',
              usage='[name]')
-async def balance(ctx, *args):
+async def balance(ctx, *, args):
     if len(args) != 0:
-        user = await toUser(ctx, ' '.join(args))
+        user = await toUser(ctx, args)
         if user is None:
-            await ctx.send(f"{args[0]} is not a valid money haver")
+            name = sanitize(args)
+            await ctx.send(f"{name} is not a valid money haver")
             return
     else:
         user = ctx.author
@@ -195,13 +198,15 @@ async def pay(ctx, *args):
     name = ' '.join(args[:-1])
     rec_user = await toUser(ctx, name)
     if rec_user is None:
+        name = sanitize(name)
         await ctx.send(f"{name} is not a valid recipient")
         return
 
     amount = toValidDecimal(args[-1])
 
     if amount is None:
-        await ctx.send(f"{args[-1]} is not a valid amount of Cool Dollars")
+        amount = sanitize(args[-1])
+        await ctx.send(f"{amount} is not a valid amount of Cool Dollars")
         return
     if rec_user.id == ctx.author.id:
         await ctx.send(f"Cool. You sent yourself {amount:.2f} Cool Dollars.\nCongratulations. You have the same amount of money.")
@@ -231,7 +236,7 @@ async def name(ctx, *, name):
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
         return
-    name = re.sub(r'<?(@|@!|#|@&|(a?:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_mention, name)
+    name = sanitize(name)
     await lock(ctx.author)
     cache["names"][userIndex(ctx.author)] = name
     await ctx.send(f"Your name was was set to {name}")
@@ -241,12 +246,12 @@ async def name(ctx, *, name):
 
 @bot.command(name='ban', help='admins use to ban a user from the economy (and erase balance)',
              usage='(user) to ban user')
-async def ban(ctx, *args):
+async def ban(ctx, *, name):
     if not isAdmin(ctx.author):
         return
-    name = ' '.join(args)
     ban_user = await toUser(ctx, name)
     if ban_user is None:
+        name = sanitize(name)
         await ctx.send(f"{name} is not a valid user to ban")
         return
     if ban_user.id in cache["banned"]:
@@ -266,12 +271,12 @@ async def ban(ctx, *args):
 
 @bot.command(name='unban', help='admins use to pardon a user from the economy (does not restore balance)',
              usage='(user) to unban user')
-async def unban(ctx, *args):
+async def unban(ctx, *, name):
     if not isAdmin(ctx.author):
         return
-    name = ' '.join(args)
     ban_user = await toUser(ctx, name)
     if ban_user is None:
+        name = sanitize(name)
         await ctx.send(f"{name} is not a valid user.")
         return
     if ban_user.id not in cache["banned"]:
@@ -371,7 +376,10 @@ def toValidDecimal(val):
     except InvalidOperation:
         return None
 
-def sanitize_mention(mention):
+def sanitize(input):
+    return re.sub(r'<?(@|@!|#|@&|(a?:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_instance, input)
+
+def sanitize_instance(mention):
     if mention.group(1)[0] == "@":
         return "@disallowed"
     elif mention.group(1) == "#":
@@ -385,7 +393,8 @@ async def on_command_error(ctx, error):
         await ctx.send("That user is banned. They cannot participate in the economy unless an admin uses $unban on them.")
         return
     elif isinstance(error, commands.CommandNotFound):
-        await ctx.send(f"{ctx.message.content} is not a valid command.")
+        content = sanitize(ctx.message.content)
+        await ctx.send(f"{content} is not a valid command.")
         return
     elif isinstance(error, commands.ArgumentParsingError):
         await ctx.send("Nice try, Sherlock SQL Injection.")
