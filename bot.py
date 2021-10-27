@@ -225,20 +225,18 @@ async def pay(ctx, *args):
 @bot.command(name='name', help='change or set your name in the spreadsheet',
              usage='to see your current name\n'
                    '$name [new_name] to change names')
-async def name(ctx, *args):
-    if len(args) == 0:
+async def name(ctx, name):
+    if len(name) == 0:
         name = await getName(ctx.author)
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
         return
-    name = ' '.join(args)
     if re.match(r'<?([0-9]+)>$', name):
         name = str(await toUser(ctx, name))
         if name is None:
             await ctx.send(f"Not a valid name.")
             return
-    if "'" in name or '"' in name or '\\' in name:
-        await ctx.send("Nice try, Sherlock SQL Injection.")
+
     await lock(ctx.author)
     cache["names"][userIndex(ctx.author)] = name
     await ctx.send(f"Your name was was set to {name}")
@@ -388,5 +386,6 @@ async def on_command_error(ctx, error):
         await ctx.send(f"{ctx.message.content} is not a valid command.")
         return
     await (await bot.fetch_channel(900027403919839282)).send(str(error))
+    raise error
 
 bot.run(TOKEN)
