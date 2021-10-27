@@ -373,9 +373,6 @@ def toValidDecimal(val):
 
 def sanitize_mention(mention):
     if mention.group(1)[0] == "@":
-        if len(mention.group(1)) > 1:
-            if mention.group(1) == "&"
-                bot.get_guild(693144628588970075).roles.int(mention.group(2))
         return "@disallowed"
     elif mention.group(1) == "#":
         return "#disallowed"
