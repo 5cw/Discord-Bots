@@ -265,7 +265,7 @@ async def ban(ctx, *, name=""):
         del cache["balances"][idx]
         del cache["names"][idx]
     await unlock()
-    await ctx.send(f"{await getName(ban_user)} was banned.")
+    await ctx.send(f"{str(ban_user)} was banned.")
     pushCache(ban=True)
 
 
@@ -280,10 +280,10 @@ async def unban(ctx, *, name=""):
         await ctx.send(f"{name} is not a valid user.")
         return
     if ban_user.id not in cache["banned"]:
-        await ctx.send(f"{name} is not a banned.")
+        await ctx.send(f"{str(ban_user)} is not banned.")
         return
     cache["banned"].remove(ban_user.id)
-    await ctx.send(f"{name} was unbanned. use $setup to rejoin the economy.")
+    await ctx.send(f"{str(ban_user)} was unbanned. use $setup to rejoin the economy.")
     pushCache(unban=True)
 
 
