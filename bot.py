@@ -372,6 +372,7 @@ def toValidDecimal(val):
         amount = Decimal(val)
         if amount.is_nan() or amount.is_infinite() or amount.is_subnormal():
             raise InvalidOperation
+        amount = Decimal(amount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
         return amount
     except InvalidOperation:
         return None
