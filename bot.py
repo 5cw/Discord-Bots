@@ -230,8 +230,8 @@ async def pay(ctx, *args):
 @bot.command(name='name', help='change or set your name in the spreadsheet',
              usage='to see your current name\n'
                    '$name [new_name] to change names')
-async def name(ctx, *, name):
-    if len(name) == 0:
+async def name(ctx, *, name=None):
+    if name is None:
         name = await getName(ctx.author)
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
@@ -246,7 +246,7 @@ async def name(ctx, *, name):
 
 @bot.command(name='ban', help='admins use to ban a user from the economy (and erase balance)',
              usage='(user) to ban user')
-async def ban(ctx, *, name):
+async def ban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
     ban_user = await toUser(ctx, name)
@@ -271,7 +271,7 @@ async def ban(ctx, *, name):
 
 @bot.command(name='unban', help='admins use to pardon a user from the economy (does not restore balance)',
              usage='(user) to unban user')
-async def unban(ctx, *, name):
+async def unban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
     ban_user = await toUser(ctx, name)
