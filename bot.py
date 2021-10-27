@@ -202,6 +202,9 @@ async def pay(ctx, *args):
     if amount is None:
         await ctx.send(f"{args[-1]} is not a valid amount of Cool Dollars")
         return
+    if rec_user.id == ctx.author.id:
+        await ctx.send(f"Cool. You sent yourself {amount:.2f} dollars.\nCongratulations. You have the same amount of money.")
+        return
     send_balance = await getBalance(ctx.author)
     rec_balance = await getBalance(rec_user)
 
