@@ -237,6 +237,8 @@ async def name(ctx, *args):
         if name is None:
             await ctx.send(f"Not a valid name.")
             return
+    if "'" in name or '"' in name or '\\' in name:
+        await ctx.send("Nice try, Sherlock SQL Injection.")
     await lock(ctx.author)
     cache["names"][userIndex(ctx.author)] = name
     await ctx.send(f"Your name was was set to {name}")
