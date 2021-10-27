@@ -225,7 +225,7 @@ async def pay(ctx, *args):
 @bot.command(name='name', help='change or set your name in the spreadsheet',
              usage='to see your current name\n'
                    '$name [new_name] to change names')
-async def name(ctx, name):
+async def name(ctx, *, name):
     if len(name) == 0:
         name = await getName(ctx.author)
         await ctx.send(f"Your name is currently {name}.\n"
