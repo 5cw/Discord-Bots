@@ -1,3 +1,4 @@
+import re
 import time
 
 import gspread
@@ -232,6 +233,8 @@ async def name(ctx, *args):
         return
     await lock(ctx.author)
     name = ' '.join(args)
+    if re.match(r'<@!?([0-9]+)>$', name):
+        name = str(await toUser(name))
     cache["names"][userIndex(ctx.author)] = name
     await ctx.send(f"Your name was was set to {name}")
     await unlock(ctx.author)
