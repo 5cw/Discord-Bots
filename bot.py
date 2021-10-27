@@ -265,7 +265,7 @@ async def ban(ctx, *, name=""):
         del cache["balances"][idx]
         del cache["names"][idx]
     await unlock()
-    await ctx.send(f"{name} was banned.")
+    await ctx.send(f"{await getName(ban_user)} was banned.")
     pushCache(ban=True)
 
 
