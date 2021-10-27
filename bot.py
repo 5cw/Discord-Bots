@@ -231,8 +231,7 @@ async def name(ctx, *, name):
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
         return
-    re.sub(r'<?(@|@!|#|@&|(a?:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_mention, name)
-
+    name = re.sub(r'<?(@|@!|#|@&|(a?:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_mention, name)
     await lock(ctx.author)
     cache["names"][userIndex(ctx.author)] = name
     await ctx.send(f"Your name was was set to {name}")
@@ -374,6 +373,9 @@ def toValidDecimal(val):
 
 def sanitize_mention(mention):
     if mention.group(1)[0] == "@":
+        if len(mention.group(1)) > 1:
+            if mention.group(1) == "&"
+                bot.get_guild(693144628588970075).roles.int(mention.group(2))
         return "@disallowed"
     elif mention.group(1) == "#":
         return "#disallowed"
