@@ -385,6 +385,9 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandNotFound):
         await ctx.send(f"{ctx.message.content} is not a valid command.")
         return
+    elif isinstance(error, commands.ArgumentParsingError):
+        await ctx.send("Nice try, Sherlock SQL Injection.")
+        return
     await (await bot.fetch_channel(900027403919839282)).send(str(error))
     raise error
 
