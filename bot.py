@@ -231,11 +231,7 @@ async def name(ctx, *, name):
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
         return
-    if re.match(r'<?([0-9]+)>$', name):
-        name = str(await toUser(ctx, name))
-        if name is None:
-            await ctx.send(f"Not a valid name.")
-            return
+    re.sub(r'<?(@|@!|#|@&|(a?:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_mention, name)
 
     await lock(ctx.author)
     cache["names"][userIndex(ctx.author)] = name
@@ -376,6 +372,13 @@ def toValidDecimal(val):
     except InvalidOperation:
         return None
 
+def sanitize_mention(mention):
+    if mention.group(1)[0] == "@":
+        return "@disallowed"
+    elif mention.group(1) == "#":
+        return "#disallowed"
+    else:
+        return ":disallowed:"
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -390,5 +393,8 @@ async def on_command_error(ctx, error):
         return
     await (await bot.fetch_channel(900027403919839282)).send(str(error))
     raise error
+
+
+
 
 bot.run(TOKEN)
