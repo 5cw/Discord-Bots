@@ -116,7 +116,7 @@ async def award(ctx, *args):
         return
     print(cache)
     name = ' '.join(args[:-1])
-    user = toUser(ctx, name)
+    user = await toUser(ctx, name)
     if user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid awardee")
@@ -164,7 +164,7 @@ async def sync(ctx, *args):
              usage='[name]')
 async def balance(ctx, *, args=None):
     if args is not None:
-        user = toUser(ctx, args)
+        user = await toUser(ctx, args)
         if user is None:
             name = sanitize(ctx, args)
             await ctx.send(f"{name} is not a valid money haver")
@@ -179,7 +179,7 @@ async def balance(ctx, *, args=None):
 @bot.command(name='edit', hidden=True)
 async def edit(ctx, *args):
     if isAdmin(ctx.author):
-        edited = toUser(ctx, args[0])
+        edited = await toUser(ctx, args[0])
         if edited is not None:
             await setBalance(edited, Decimal(args[1]))
             pushCache()
@@ -196,9 +196,8 @@ async def pay(ctx, *args):
     if len(args) < 2:
         await ctx.send(f"$pay expects a recipient and an amount")
         return
-    sender = str(ctx.author.id)
     name = ' '.join(args[:-1])
-    rec_user = toUser(ctx, name)
+    rec_user = await toUser(ctx, name)
     if rec_user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid recipient")
@@ -251,7 +250,7 @@ async def name(ctx, *, name=None):
 async def ban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
-    ban_user = toUser(ctx, name)
+    ban_user = await toUser(ctx, name)
     if ban_user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid user to ban")
@@ -276,7 +275,7 @@ async def ban(ctx, *, name=""):
 async def unban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
-    ban_user = toUser(ctx, name)
+    ban_user = await toUser(ctx, name)
     if ban_user is None:
         name = sanitize(ctx, name)
         await ctx.send(f"{name} is not a valid user.")
@@ -364,7 +363,7 @@ async def toUser(ctx, name):
         return await converter.convert(ctx, name)
     except commands.UserNotFound:
         try:
-            return await bot.get_user(cache["ids"][cache["names"].index(name)])
+            return bot.get_user(cache["ids"][cache["names"].index(name)])
         except ValueError:
             return None
 
@@ -400,22 +399,22 @@ def sanitize(ctx, input):
     return re.sub(r'<?(@|@!|#|@&|a?(:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_helper, input)
 
 
-
-
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, UserBannedError):
-        await ctx.send("That user is banned. They cannot participate in the economy unless an admin uses $unban on them.")
-        return
-    elif isinstance(error, commands.CommandNotFound):
-        content = sanitize(ctx, ctx.message.content)
-        await ctx.send(f"{content} is not a valid command.")
-        return
-    elif isinstance(error, commands.ArgumentParsingError):
-        await ctx.send("Nice try, Sherlock SQL Injection.")
-        return
-    await (await bot.fetch_channel(900027403919839282)).send(str(error))
-    raise error
+log_errors_in_channel = False
+if log_errors_in_channel:
+    @bot.event
+    async def on_command_error(ctx, error):
+        if isinstance(error, UserBannedError):
+            await ctx.send("That user is banned. They cannot participate in the economy unless an admin uses $unban on them.")
+            return
+        elif isinstance(error, commands.CommandNotFound):
+            content = sanitize(ctx, ctx.message.content)
+            await ctx.send(f"{content} is not a valid command.")
+            return
+        elif isinstance(error, commands.ArgumentParsingError):
+            await ctx.send("Nice try, Sherlock SQL Injection.")
+            return
+        await (await bot.fetch_channel(900027403919839282)).send(str(error))
+        raise error
 
 
 
