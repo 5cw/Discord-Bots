@@ -302,6 +302,7 @@ async def ban(ctx, *, name=""):
         del cache["ids"][idx]
         del cache["balances"][idx]
         del cache["names"][idx]
+        del cache["user_locks"][ban_user.id]
     unlock()
     await ctx.send(f"{str(ban_user)} was banned.")
     await pushCache(ban=True)
@@ -383,7 +384,6 @@ class UserBannedError(commands.CommandError):
 def newUser(user):
     if user.id in cache["banned"]:
         raise UserBannedError
-    name = str(user)
     cache["ids"].append(user.id)
     cache["names"].append(str(user))
     cache["balances"].append(Decimal("25.00"))
