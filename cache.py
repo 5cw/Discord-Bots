@@ -15,7 +15,7 @@ class UserBannedError(commands.CommandError):
 
 class DecimalizationError(commands.CommandError):
     def __init__(self, amount):
-        super.__init__()
+        super()
         self.amount = amount
 
 

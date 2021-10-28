@@ -222,8 +222,12 @@ def sanitize(ctx, input):
                 role = ctx.guild.get_role(id) or nf
                 return f"@{role}"
             else:
-                user = bot.get_user(id) or nf
-                return f"@{user}"
+                user = ctx.guild.get_member(id)
+                if user is None:
+                    name = user.nick
+                else:
+                    name = user.display_name
+                return f"@{name}"
         elif m.group(1) == "#":
             channel = bot.get_channel(id) or nf
             return f"#{channel}"
@@ -234,7 +238,7 @@ def sanitize(ctx, input):
 
 
 log_errors_in_channel = os.name != "nt"
-if log_errors_in_channel:
+if log_errors_in_channel or True:
     @bot.event
     async def on_command_error(ctx, error):
         if isinstance(error, UserBannedError):
