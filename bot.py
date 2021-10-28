@@ -45,7 +45,7 @@ if not creds or not creds.valid:
 # creds = ServiceAccountCredentials.from_json_keyfile_name('cool-dollars-687de25f7d88.json', SCOPES)
 gc = gspread.service_account(filename='cool-dollars-687de25f7d88.json', scopes=SCOPES)
 sh = gc.open_by_key(SPREADSHEET_ID)
-getcontext().prec = MAX_DIGITS + 2
+getcontext().prec = MAX_DIGITS + 3
 MAX_BALANCE = Decimal("10") ** Decimal(MAX_DIGITS)
 
 async def fetchCache():
@@ -141,15 +141,7 @@ async def award(ctx, *args):
     print(cache)
     name = ' '.join(args[:-1])
     user = await toUser(ctx, name)
-    if user is None:
-        name = sanitize(ctx, name)
-        await ctx.send(f"{name} is not a valid awardee")
-        return
     amount = toValidDecimal(args[-1])
-    if amount is None:
-        amount = sanitize(ctx, args[-1])
-        await ctx.send(f"{amount} is not a valid amount of Cool Dollars")
-        return
     bal = await getBalance(user)
     if bal is None:
         newUser(user)
@@ -195,12 +187,8 @@ async def sync(ctx, *args):
 @bot.command(name='balance', help='check your or others\' cool dollar balances',
              usage='[name]')
 async def balance(ctx, *, args=None):
-    if args is not None:
+    if args is not None and len(args) != 0:
         user = await toUser(ctx, args)
-        if user is None:
-            name = sanitize(ctx, args)
-            await ctx.send(f"{name} is not a valid money haver")
-            return
     else:
         user = ctx.author
 
@@ -231,17 +219,7 @@ async def pay(ctx, *args):
         return
     name = ' '.join(args[:-1])
     rec_user = await toUser(ctx, name)
-    if rec_user is None:
-        name = sanitize(ctx, name)
-        await ctx.send(f"{name} is not a valid recipient")
-        return
-
     amount = toValidDecimal(args[-1])
-
-    if amount is None:
-        amount = sanitize(ctx, args[-1])
-        await ctx.send(f"{amount} is not a valid amount of Cool Dollars")
-        return
     if rec_user.id == ctx.author.id:
         await ctx.send(f"Cool. You sent yourself {amount:.2f} Cool Dollars.\nCongratulations. You have the same amount of money.")
         return
@@ -288,10 +266,6 @@ async def ban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
     ban_user = await toUser(ctx, name)
-    if ban_user is None:
-        name = sanitize(ctx, name)
-        await ctx.send(f"{name} is not a valid user to ban")
-        return
     if ban_user.id in cache["banned"]:
         await ctx.send(f"{name} is already banned.")
         return
@@ -314,10 +288,6 @@ async def unban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
     ban_user = await toUser(ctx, name)
-    if ban_user is None:
-        name = sanitize(ctx, name)
-        await ctx.send(f"{name} is not a valid user.")
-        return
     if ban_user.id not in cache["banned"]:
         await ctx.send(f"{str(ban_user)} is not banned.")
         return
@@ -377,10 +347,6 @@ def userIndex(user):
     return idx
 
 
-class UserBannedError(commands.CommandError):
-    pass
-
-
 def newUser(user):
     if user.id in cache["banned"]:
         raise UserBannedError
@@ -402,18 +368,23 @@ async def toUser(ctx, name):
         try:
             return bot.get_user(cache["ids"][cache["names"].index(name)])
         except ValueError:
-            return None
+            raise commands.UserNotFound(name)
 
 
 def toValidDecimal(val):
     try:
         amount = Decimal(val)
+        print(amount)
         if amount.is_nan() or amount.is_infinite():
-            return None
-        amount = Decimal(amount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
+            raise DecimalizationError(val)
+        elif abs(amount) > (2*MAX_BALANCE):
+            amount = (2*MAX_BALANCE).copy_sign(amount)
+        else:
+            amount = Decimal(amount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
         return amount
     except InvalidOperation:
-        return None
+        raise DecimalizationError(val)
+
 
 def sanitize(ctx, input):
     def sanitize_helper(m):
@@ -436,6 +407,15 @@ def sanitize(ctx, input):
     return re.sub(r'<?(@|@!|#|@&|a?(:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_helper, input)
 
 
+class UserBannedError(commands.CommandError):
+    pass
+
+class DecimalizationError(commands.CommandError):
+    def __init__(self, amount):
+        super.__init__()
+        self.amount = amount
+
+
 log_errors_in_channel = os.name != "nt"
 if log_errors_in_channel:
     @bot.event
@@ -450,6 +430,13 @@ if log_errors_in_channel:
         elif isinstance(error, commands.ArgumentParsingError):
             await ctx.send("Nice try, Sherlock SQL Injection.")
             return
+        elif isinstance(error, DecimalizationError):
+            amount = sanitize(ctx, error.amount)
+            await ctx.send(f"{amount} is not a valid amount of Cool Dollars.")
+            return
+        elif isinstance(error, commands.UserNotFound):
+            name = sanitize(ctx, error.argument)
+            await ctx.send(f"{name} is not a valid user.")
         await (await bot.fetch_channel(900027403919839282)).send(str(error))
         raise error
 
