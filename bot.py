@@ -1,24 +1,4 @@
-import re
-import time
-
-import gspread
-
-startTime = time.time()
-
-import discord
-from discord.ext import commands
-from dotenv import load_dotenv
-from decimal import *
-import asyncio
-
-import os.path
-
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
-SPREADSHEET_ID = os.getenv('SPREADSHEET_ID')
-SCOPES = os.getenv('SCOPES').split(',')
-MAX_DIGITS = int(os.getenv('MAX_DIGITS'))
-
+from cache import *
 
 intents = discord.Intents.default()
 intents.members = True
@@ -27,7 +7,8 @@ intents.guilds = True
 bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands.DefaultHelpCommand(
     no_category='Commands'
 ))
-
+load_dotenv()
+TOKEN = os.getenv('DISCORD_TOKEN')
 
 """
 creds = None
@@ -43,87 +24,6 @@ if not creds or not creds.valid:
         pickle.dump(creds, token)
 """
 # creds = ServiceAccountCredentials.from_json_keyfile_name('cool-dollars-687de25f7d88.json', SCOPES)
-gc = gspread.service_account(filename='cool-dollars-687de25f7d88.json', scopes=SCOPES)
-sh = gc.open_by_key(SPREADSHEET_ID)
-getcontext().prec = MAX_DIGITS + 3
-MAX_BALANCE = Decimal("10") ** Decimal(MAX_DIGITS)
-
-async def fetchCache():
-    global cache
-    cache = {}
-    cache["rate_limited"] = False
-    batch_get = (await rate_limit_retry(sh.values_batch_get,
-                                 ["Balances!A:B", "bts!A:A", "bts!B:B"],
-                                 {"majorDimension": "COLUMNS"}))["valueRanges"]
-    ids = batch_get[1].get('values') or [[]]
-    cache["ids"] = [int(id) for id in ids[0]]
-    name_bals = batch_get[0].get('values') or [[],[]]
-    cache["names"] = name_bals[0]
-    cache["balances"] = [Decimal(num) for num in name_bals[1]]
-    banned = batch_get[2].get('values') or [[]]
-    cache["banned"] = [int(id) for id in banned[0]]
-    cache["user_locks"] = {i: asyncio.Lock() for i in cache["ids"]}
-
-
-
-
-async def pushCache(ban=False, unban=False):
-    global cache
-    data = []
-    names = cache["names"]
-    balances = [f"{bal:.2f}" for bal in cache["balances"]]
-    ids = [str(id) for id in cache["ids"]]
-    banned = [str(id) for id in cache["banned"]]
-    if len(ids) > 0:
-        data.append({
-            'range': f"Balances!A1:B{len(ids)}",
-            "majorDimension": "COLUMNS",
-            "values": [names, balances]
-        })
-        data.append({
-            'range': f"bts!A1:A{len(ids)}",
-            "majorDimension": "COLUMNS",
-            "values": [ids]
-        })
-    if len(banned) > 0:
-        data.append({
-            'range': f"bts!B1:B{len(banned)}",
-            "majorDimension": "COLUMNS",
-            "values": [banned]
-        })
-    params = {
-        "valueInputOption": "RAW",
-    }
-    body = {
-        "data": data
-    }
-    await lock()
-    await rate_limit_retry(sh.values_batch_update, params, body)
-    if ban:
-        await rate_limit_retry(sh.values_batch_clear, body={"ranges": [f"Balances!A{len(ids) + 1}:B{len(ids) + 1}",
-                                                       f"bts!A{len(ids) + 1}:A{len(ids) + 1}"]})
-    elif unban:
-        await rate_limit_retry(sh.values_batch_clear, body={"ranges": [f"bts!B{len(banned) + 1}:B{len(banned) + 1}"]})
-    unlock()
-
-
-async def rate_limit_retry(f, *args, **kwargs):
-    s = True
-    timeout = 1
-    while s:
-        resp = f(*args, **kwargs)
-        s = False
-        if resp.get("error"):
-            if resp["error"]["code"] == 429:
-                s = True
-            else:
-                await (await bot.fetch_channel(900027403919839282)).send(str(resp))
-        cache["rate_limited"] = s
-        if s:
-            await asyncio.sleep(timeout)
-            timeout *= 2
-        else:
-            return resp
 
 
 global cache
@@ -142,45 +42,41 @@ async def award(ctx, *args):
     name = ' '.join(args[:-1])
     user = await toUser(ctx, name)
     amount = toValidDecimal(args[-1])
-    bal = await getBalance(user)
+    bal = await cache.getBalance(user)
     if bal is None:
-        newUser(user)
+        cache.newUser(user)
         bal = 25
-    new_bal = bal + amount
-    if new_bal > MAX_BALANCE:
-        new_bal = MAX_BALANCE
-        amount = MAX_BALANCE - bal
-    elif new_bal < -MAX_BALANCE:
-        new_bal = -MAX_BALANCE
-        amount = -MAX_BALANCE - bal
-    await setBalance(user, new_bal)
-    await pushCache()
-    await ctx.send(f"Awarded {amount:.2f} Cool Dollars to {await getName(user)}")
 
+    prec = getcontext().prec
+    new_bal = bal + amount
+    if abs(new_bal) > cache.MAX_BALANCE:
+        new_bal = cache.MAX_BALANCE.copy_sign(new_bal)
+        amount = new_bal - bal
+    await cache.setBalance(user, new_bal)
+    await cache.pushCache()
+    await ctx.send(f"Awarded {amount:.2f} Cool Dollars to {await cache.getName(user)}")
 
 
 @bot.command(name='setup', help='set up your cool dollar account',
              usage='[name]')
-async def setup(ctx, *args):
-    if ctx.author.id in cache["ids"]:
-        name = await getName(ctx.author)
+async def setup(ctx, *, args=None):
+    if ctx.author.id in cache.ids:
+        name = await cache.getName(ctx.author)
         await ctx.send(f"You're already a part of the economy, {name}.")
         return
-    newUser(ctx.author)
-    if len(args) != 0:
-        await lock(ctx.author)
-        name = ' '.join(args)
-        cache["names"][userIndex(ctx.author)] = name
-        unlock(ctx.author)
+    cache.newUser(ctx.author)
+    if args is not None and len(args) != 0:
+        name = args
+        await cache.setName(ctx.author, name)
     else:
-        name = await getName(ctx.author)
+        name = str(ctx.author)
     await ctx.send(f"Welcome to the economy, {name}! Your balance is 25.00 Cool Dollars.")
-    await pushCache()
+    await cache.pushCache()
 
 
 @bot.command(name='sync', hidden=True)
 async def sync(ctx, *args):
-    fetchCache()
+    cache.fetchCache()
     await ctx.send("The bot is in sync with the spreadsheet.")
 
 
@@ -192,8 +88,8 @@ async def balance(ctx, *, args=None):
     else:
         user = ctx.author
 
-    bal = await getBalance(user)
-    await ctx.send(f"{await getName(user)} has {bal:.2f} Cool Dollars")
+    bal = await cache.getBalance(user)
+    await ctx.send(f"{await cache.getName(user)} has {bal:.2f} Cool Dollars")
 
 
 @bot.command(name='edit', hidden=True)
@@ -202,13 +98,13 @@ async def edit(ctx, *args):
         edited = await toUser(ctx, ' '.join(args[:-1]))
         amount = toValidDecimal(args[-1])
         if edited is not None and amount is not None:
-            await setBalance(edited, amount)
-            await pushCache()
+            await cache.setBalance(edited, amount)
+            await cache.pushCache()
 
 
 @bot.command(name='test', hidden=True)
 async def test(ctx, *args):
-    print(sh.values_batch_get(["Balances!A:B", "bts!A:A", "bts!B:B"], {"majorDimension": "COLUMNS"}))
+    print(cache.sh.values_batch_get(["Balances!A:B", "bts!A:A", "bts!B:B"], {"majorDimension": "COLUMNS"}))
 
 
 @bot.command(name='pay', help='pay someone cool dollars',
@@ -221,10 +117,11 @@ async def pay(ctx, *args):
     rec_user = await toUser(ctx, name)
     amount = toValidDecimal(args[-1])
     if rec_user.id == ctx.author.id:
-        await ctx.send(f"Cool. You sent yourself {amount:.2f} Cool Dollars.\nCongratulations. You have the same amount of money.")
+        await ctx.send(
+            f"Cool. You sent yourself {amount:.2f} Cool Dollars.\nCongratulations. You have the same amount of money.")
         return
-    send_balance = await getBalance(ctx.author)
-    rec_balance = await getBalance(rec_user)
+    send_balance = await cache.getBalance(ctx.author)
+    rec_balance = await cache.getBalance(rec_user)
 
     if amount <= 0:
         await ctx.send(f"{amount:.2f} is not positive")
@@ -234,13 +131,13 @@ async def pay(ctx, *args):
         await ctx.send(f"{amount:.2f} is more than your current balance, {send_balance:.2f}")
         return
     new_bal = rec_balance + amount
-    if new_bal > MAX_BALANCE:
-        new_bal = MAX_BALANCE
-        amount = MAX_BALANCE - rec_balance
-    await setBalance(ctx.author, send_balance - amount)
-    await setBalance(rec_user, new_bal)
-    await ctx.send(f"{amount:.2f} was sent to {await getName(rec_user)}")
-    await pushCache()
+    if new_bal > cache.MAX_BALANCE:
+        new_bal = cache.MAX_BALANCE
+        amount = cache.MAX_BALANCE - rec_balance
+    await cache.setBalance(ctx.author, send_balance - amount)
+    await cache.setBalance(rec_user, new_bal)
+    await ctx.send(f"{amount:.2f} was sent to {await cache.getName(rec_user)}")
+    await cache.pushCache()
 
 
 @bot.command(name='name', help='change or set your name in the spreadsheet',
@@ -248,16 +145,14 @@ async def pay(ctx, *args):
                    '$name [new_name] to change names')
 async def name(ctx, *, name=None):
     if name is None or name == "":
-        name = await getName(ctx.author)
+        name = await cache.getName(ctx.author)
         await ctx.send(f"Your name is currently {name}.\n"
                        f"Use \"$name Your Name Here\" to change it")
         return
     name = sanitize(ctx, name)
-    await lock(ctx.author)
-    cache["names"][userIndex(ctx.author)] = name
+    await cache.setName(ctx.author, name)
     await ctx.send(f"Your name was was set to {name}")
-    unlock(ctx.author)
-    await pushCache()
+    await cache.pushCache()
 
 
 @bot.command(name='ban', help='admins use to ban a user from the economy (and erase balance)',
@@ -266,20 +161,12 @@ async def ban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
     ban_user = await toUser(ctx, name)
-    if ban_user.id in cache["banned"]:
+    if ban_user.id in cache.banned:
         await ctx.send(f"{name} is already banned.")
         return
-    await lock()
-    cache["banned"].append(ban_user.id)
-    if ban_user.id in cache["ids"]:
-        idx = userIndex(ban_user)
-        del cache["ids"][idx]
-        del cache["balances"][idx]
-        del cache["names"][idx]
-        del cache["user_locks"][ban_user.id]
-    unlock()
+    await cache.ban(ban_user)
     await ctx.send(f"{str(ban_user)} was banned.")
-    await pushCache(ban=True)
+    await cache.pushCache(ban=True)
 
 
 @bot.command(name='unban', help='admins use to pardon a user from the economy (does not restore balance)',
@@ -288,72 +175,12 @@ async def unban(ctx, *, name=""):
     if not isAdmin(ctx.author):
         return
     ban_user = await toUser(ctx, name)
-    if ban_user.id not in cache["banned"]:
+    if ban_user.id not in cache.banned:
         await ctx.send(f"{str(ban_user)} is not banned.")
         return
-    cache["banned"].remove(ban_user.id)
+    await cache.unban(ban_user)
     await ctx.send(f"{str(ban_user)} was unbanned. use $setup to rejoin the economy.")
-    await pushCache(unban=True)
-
-
-async def lock(user=None):
-    if user is None:
-        for l in cache["user_locks"].values():
-            await l.acquire()
-        return
-    out = cache["user_locks"].get(user.id)
-    if out is None:
-        newUser(user)
-        out = cache["user_locks"].get(user.id)
-    await out.acquire()
-
-
-def unlock(user=None):
-    if user is None:
-        for l in cache["user_locks"].values():
-            l.release()
-        return
-    cache["user_locks"][user.id].release()
-
-
-async def getName(user):
-    await lock(user)
-    out = cache["names"][userIndex(user)]
-    unlock(user)
-    return out
-
-
-async def setBalance(user, new_balance):
-    await lock(user)
-    idx = userIndex(user)
-    cache["balances"][idx] = new_balance
-    unlock(user)
-
-
-async def getBalance(user):
-    await lock(user)
-    idx = userIndex(user)
-    out = cache["balances"][idx]
-    unlock(user)
-    return out
-
-
-def userIndex(user):
-    try:
-        idx = cache["ids"].index(user.id)
-    except ValueError:
-        newUser(user)
-        idx = cache["ids"].index(user.id)
-    return idx
-
-
-def newUser(user):
-    if user.id in cache["banned"]:
-        raise UserBannedError
-    cache["ids"].append(user.id)
-    cache["names"].append(str(user))
-    cache["balances"].append(Decimal("25.00"))
-    cache["user_locks"][user.id] = asyncio.Lock()
+    await cache.pushCache(unban=True)
 
 
 def isAdmin(user):
@@ -366,7 +193,7 @@ async def toUser(ctx, name):
         return await converter.convert(ctx, name)
     except commands.UserNotFound:
         try:
-            return bot.get_user(cache["ids"][cache["names"].index(name)])
+            return bot.get_user(cache.ids[cache.names.index(name)])
         except ValueError:
             raise commands.UserNotFound(name)
 
@@ -377,8 +204,8 @@ def toValidDecimal(val):
         print(amount)
         if amount.is_nan() or amount.is_infinite():
             raise DecimalizationError(val)
-        elif abs(amount) > (2*MAX_BALANCE):
-            amount = (2*MAX_BALANCE).copy_sign(amount)
+        elif abs(amount) > (2 * cache.MAX_BALANCE):
+            amount = (2 * cache.MAX_BALANCE).copy_sign(amount)
         else:
             amount = Decimal(amount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
         return amount
@@ -407,21 +234,13 @@ def sanitize(ctx, input):
     return re.sub(r'<?(@|@!|#|@&|a?(:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_helper, input)
 
 
-class UserBannedError(commands.CommandError):
-    pass
-
-class DecimalizationError(commands.CommandError):
-    def __init__(self, amount):
-        super.__init__()
-        self.amount = amount
-
-
 log_errors_in_channel = os.name != "nt"
 if log_errors_in_channel:
     @bot.event
     async def on_command_error(ctx, error):
         if isinstance(error, UserBannedError):
-            await ctx.send("That user is banned. They cannot participate in the economy unless an admin uses $unban on them.")
+            await ctx.send(
+                "That user is banned. They cannot participate in the economy unless an admin uses $unban on them.")
             return
         elif isinstance(error, commands.CommandNotFound):
             content = sanitize(ctx, ctx.message.content)
@@ -440,11 +259,19 @@ if log_errors_in_channel:
         await (await bot.fetch_channel(900027403919839282)).send(str(error))
         raise error
 
+
 @bot.check
 async def is_rate_limited(ctx):
-    if cache["rate_limited"]:
+    if cache.rate_limited:
         await ctx.send("Too many Google Sheets API calls. Slow down.")
-    return not cache["rate_limited"]
+    return not cache.rate_limited
 
-asyncio.run(fetchCache())
+@bot.event
+async def on_ready():
+    global cache
+    cache = Cache()
+    await cache.fetchCache()
+    print(getcontext().prec)
+
+
 bot.run(TOKEN)
