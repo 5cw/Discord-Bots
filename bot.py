@@ -16,6 +16,9 @@ import os.path
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 SPREADSHEET_ID = os.getenv('SPREADSHEET_ID')
+SCOPES = os.getenv('SCOPES').split(',')
+MAX_DIGITS = int(os.getenv('MAX_DIGITS'))
+
 
 intents = discord.Intents.default()
 intents.members = True
@@ -25,7 +28,7 @@ bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands.De
     no_category='Commands'
 ))
 
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
 """
 creds = None
 if os.path.exists('token.pickle'):
@@ -40,13 +43,10 @@ if not creds or not creds.valid:
         pickle.dump(creds, token)
 """
 # creds = ServiceAccountCredentials.from_json_keyfile_name('cool-dollars-687de25f7d88.json', SCOPES)
-gc = gspread.service_account(filename='cool-dollars-687de25f7d88.json', scopes=[
-    'https://spreadsheets.google.com/feeds',
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive',
-])
+gc = gspread.service_account(filename='cool-dollars-687de25f7d88.json', scopes=SCOPES)
 sh = gc.open_by_key(SPREADSHEET_ID)
-
+getcontext().prec = MAX_DIGITS + 2
+MAX_BALANCE = Decimal("10") ** Decimal(MAX_DIGITS)
 
 def fetchCache():
     global cache
@@ -93,12 +93,15 @@ def pushCache(ban=False, unban=False):
     body = {
         "data": data
     }
-    print(sh.values_batch_update(params, body))
+    resp = sh.values_batch_update(params, body)
     if ban:
-        sh.values_batch_clear(body={"ranges": [f"Balances!A{len(ids)+1}:B{len(ids)+1}",
+        resp2 = sh.values_batch_clear(body={"ranges": [f"Balances!A{len(ids)+1}:B{len(ids)+1}",
                                                f"bts!A{len(ids)+1}:A{len(ids)+1}"]})
     elif unban:
-        sh.values_batch_clear(body={"ranges": [f"bts!B{len(banned) + 1}:B{len(banned) + 1}"]})
+        resp2 = sh.values_batch_clear(body={"ranges": [f"bts!B{len(banned) + 1}:B{len(banned) + 1}"]})
+    else:
+        resp2 = {}
+    print(resp, resp2)
 
 
 
@@ -131,6 +134,12 @@ async def award(ctx, *args):
         newUser(user)
         bal = 25
     new_bal = bal + amount
+    if new_bal > MAX_BALANCE:
+        new_bal = MAX_BALANCE
+        amount = MAX_BALANCE - bal
+    elif new_bal < -MAX_BALANCE:
+        new_bal = -MAX_BALANCE
+        amount = -MAX_BALANCE - bal
     await setBalance(user, new_bal)
     await ctx.send(f"Awarded {amount:.2f} Cool Dollars to {await getName(user)}")
     pushCache()
@@ -148,7 +157,7 @@ async def setup(ctx, *args):
         await lock(ctx.author)
         name = ' '.join(args)
         cache["names"][userIndex(ctx.author)] = name
-        await unlock(ctx.author)
+        unlock(ctx.author)
     else:
         name = await getName(ctx.author)
     await ctx.send(f"Welcome to the economy, {name}! Your balance is 25.00 Cool Dollars.")
@@ -159,6 +168,7 @@ async def setup(ctx, *args):
 async def sync(ctx, *args):
     fetchCache()
     await ctx.send("The bot is in sync with the spreadsheet.")
+
 
 @bot.command(name='balance', help='check your or others\' cool dollar balances',
              usage='[name]')
@@ -179,9 +189,10 @@ async def balance(ctx, *, args=None):
 @bot.command(name='edit', hidden=True)
 async def edit(ctx, *args):
     if isAdmin(ctx.author):
-        edited = await toUser(ctx, args[0])
-        if edited is not None:
-            await setBalance(edited, Decimal(args[1]))
+        edited = await toUser(ctx, ' '.join(args[:-1]))
+        amount = toValidDecimal(args[-1])
+        if edited is not None and amount is not None:
+            await setBalance(edited, amount)
             pushCache()
 
 
@@ -222,8 +233,12 @@ async def pay(ctx, *args):
     if amount > send_balance:
         await ctx.send(f"{amount:.2f} is more than your current balance, {send_balance:.2f}")
         return
+    new_bal = rec_balance + amount
+    if new_bal > MAX_BALANCE:
+        new_bal = MAX_BALANCE
+        amount = MAX_BALANCE - rec_balance
     await setBalance(ctx.author, send_balance - amount)
-    await setBalance(rec_user, rec_balance + amount)
+    await setBalance(rec_user, new_bal)
     await ctx.send(f"{amount:.2f} was sent to {await getName(rec_user)}")
     pushCache()
 
@@ -241,7 +256,7 @@ async def name(ctx, *, name=None):
     await lock(ctx.author)
     cache["names"][userIndex(ctx.author)] = name
     await ctx.send(f"Your name was was set to {name}")
-    await unlock(ctx.author)
+    unlock(ctx.author)
     pushCache()
 
 
@@ -265,7 +280,7 @@ async def ban(ctx, *, name=""):
         del cache["ids"][idx]
         del cache["balances"][idx]
         del cache["names"][idx]
-    await unlock()
+    unlock()
     await ctx.send(f"{str(ban_user)} was banned.")
     pushCache(ban=True)
 
@@ -300,7 +315,7 @@ async def lock(user=None):
     await out.acquire()
 
 
-async def unlock(user=None):
+def unlock(user=None):
     if user is None:
         for l in cache["user_locks"].values():
             l.release()
@@ -311,7 +326,7 @@ async def unlock(user=None):
 async def getName(user):
     await lock(user)
     out = cache["names"][userIndex(user)]
-    await unlock(user)
+    unlock(user)
     return out
 
 
@@ -319,14 +334,14 @@ async def setBalance(user, new_balance):
     await lock(user)
     idx = userIndex(user)
     cache["balances"][idx] = new_balance
-    await unlock(user)
+    unlock(user)
 
 
 async def getBalance(user):
     await lock(user)
     idx = userIndex(user)
     out = cache["balances"][idx]
-    await unlock(user)
+    unlock(user)
     return out
 
 
@@ -371,8 +386,10 @@ async def toUser(ctx, name):
 def toValidDecimal(val):
     try:
         amount = Decimal(val)
-        if amount.is_nan() or amount.is_infinite() or amount.is_subnormal():
+        if amount.is_nan() or amount.is_infinite():
             return None
+        if amount > MAX_BALANCE:
+            return MAX_BALANCE
         amount = Decimal(amount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP))
         return amount
     except InvalidOperation:
