@@ -56,7 +56,6 @@ class Cache:
         self.user_locks = {i: asyncio.Lock() for i in self.ids}
 
     async def pushCache(self, ban=False, unban=False):
-        global cache
         data = []
         names = self.names
         balances = [f"{bal:.2f}" for bal in self.balances]
@@ -134,7 +133,7 @@ class Cache:
 
     async def setName(self, user, name):
         await self.lock(user)
-        cache.names[cache.userIndex(user)] = name
+        self.names[self.userIndex(user)] = name
         self.unlock(user)
 
     async def getName(self, user):
@@ -185,5 +184,5 @@ class Cache:
 
     async def unban(self, ban_user):
         await self.lock()
-        cache.banned.remove(ban_user.id)
+        self.banned.remove(ban_user.id)
         self.unlock()

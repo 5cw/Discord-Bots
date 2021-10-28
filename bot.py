@@ -97,9 +97,8 @@ async def edit(ctx, *args):
     if isAdmin(ctx.author):
         edited = await toUser(ctx, ' '.join(args[:-1]))
         amount = toValidDecimal(args[-1])
-        if edited is not None and amount is not None:
-            await cache.setBalance(edited, amount)
-            await cache.pushCache()
+        await cache.setBalance(edited, amount)
+        await cache.pushCache()
 
 
 @bot.command(name='test', hidden=True)
