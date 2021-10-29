@@ -14,7 +14,9 @@ KT_TOKEN = os.getenv('KT_TOKEN')
 async def on_message(message):
     if message.author == kt_bot.user:
         return
-    m = re.match(r'^^(\S{4}) ?(\S{4})$$', message.content)
+
+    wws = re.sub(r'\s', '', message.content)
+    m = re.match(r'^(\S{4})(\S{4})$', wws)
     if m:
         await message.channel.send(f"{m.group(1).upper()} {m.group(2).upper()}")
 
