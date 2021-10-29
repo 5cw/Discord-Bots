@@ -42,7 +42,7 @@ class Cache:
         self.banned = None
         self.user_locks = None
 
-    async def fetchCache(self):
+    async def fetch_cache(self):
         batch_get = (await self.rate_limit_retry(self.sh.values_batch_get,
                                                  ["Balances!A:B", "bts!A:A", "bts!B:B"],
                                                  {"majorDimension": "COLUMNS"}))["valueRanges"]
@@ -55,7 +55,7 @@ class Cache:
         self.banned = [int(id) for id in banned[0]]
         self.user_locks = {i: asyncio.Lock() for i in self.ids}
 
-    async def pushCache(self, ban=False, unban=False):
+    async def push_cache(self, ban=False, unban=False):
         data = []
         names = self.names
         balances = [f"{bal:.2f}" for bal in self.balances]
@@ -120,7 +120,7 @@ class Cache:
             return
         out = self.user_locks.get(user.id)
         if out is None:
-            self.newUser(user)
+            self.new_user(user)
             out = self.user_locks.get(user.id)
         await out.acquire()
 
@@ -131,39 +131,39 @@ class Cache:
             return
         self.user_locks[user.id].release()
 
-    async def setName(self, user, name):
+    async def set_name(self, user, name):
         await self.lock(user)
-        self.names[self.userIndex(user)] = name
+        self.names[self.user_index(user)] = name
         self.unlock(user)
 
-    async def getName(self, user):
+    async def get_name(self, user):
         await self.lock(user)
-        out = self.names[self.userIndex(user)]
+        out = self.names[self.user_index(user)]
         self.unlock(user)
         return out
 
-    async def setBalance(self, user, new_balance):
+    async def set_balance(self, user, new_balance):
         await self.lock(user)
-        idx = self.userIndex(user)
+        idx = self.user_index(user)
         self.balances[idx] = new_balance
         self.unlock(user)
 
-    async def getBalance(self, user):
+    async def get_balance(self, user):
         await self.lock(user)
-        idx = self.userIndex(user)
+        idx = self.user_index(user)
         out = self.balances[idx]
         self.unlock(user)
         return out
 
-    def userIndex(self, user):
+    def user_index(self, user):
         try:
             idx = self.ids.index(user.id)
         except ValueError:
-            self.newUser(user)
+            self.new_user(user)
             idx = self.ids.index(user.id)
         return idx
 
-    def newUser(self, user):
+    def new_user(self, user):
         if user.id in self.banned:
             raise UserBannedError
         self.ids.append(user.id)
@@ -175,7 +175,7 @@ class Cache:
         await self.lock()
         self.banned.append(ban_user.id)
         if ban_user.id in self.ids:
-            idx = self.userIndex(ban_user)
+            idx = self.user_index(ban_user)
             del self.ids[idx]
             del self.balances[idx]
             del self.names[idx]
