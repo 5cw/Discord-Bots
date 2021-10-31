@@ -11,9 +11,12 @@ load_dotenv()
 KT_TOKEN = os.getenv('KT_TOKEN')
 MAX_HAND_SETS = 2
 
+PREFIXES = "$!"
+
+
 @kt_bot.event
 async def on_message(message):
-    if message.author == kt_bot.user:
+    if message.author.bot or message.content[0] in PREFIXES:
         return
 
     wws = re.sub(r'\s', '', message.content)
