@@ -99,7 +99,7 @@ async def pay(ctx, *args):
     amount = to_decimal(args[-1])
     if rec_user.id == ctx.author.id:
         await ctx.send(
-            f"Cool. You sent yourself {amount:.2f} Cool Dollars.\n_congratulations. You have the same amount of money.")
+            f"Cool. You sent yourself {amount:.2f} Cool Dollars.\nCongratulations. You have the same amount of money.")
         return
     send_balance = await cache.get_balance(ctx.author)
     rec_balance = await cache.get_balance(rec_user)
@@ -241,7 +241,8 @@ if log_errors_in_channel:
         elif isinstance(error, commands.UserNotFound):
             name = sanitize(ctx, error.argument)
             await ctx.send(f"{name} is not a valid user.")
-        await (await cd_bot.fetch_channel(900027403919839282)).send(str(error))
+        else:
+            await (await cd_bot.fetch_channel(900027403919839282)).send(str(error))
         raise error
 
 
