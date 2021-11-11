@@ -9,6 +9,7 @@ cd_bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands
 ))
 load_dotenv()
 CD_TOKEN = os.getenv('CD_TOKEN')
+converter = commands.UserConverter()
 
 
 global cache
@@ -169,14 +170,10 @@ def is_admin(user):
 
 
 async def to_user(ctx, name):
-    converter = commands.UserConverter()
     try:
+        return cd_bot.get_user(cache.ids[cache.names.index(name)])
+    except ValueError:
         return await converter.convert(ctx, name)
-    except commands.UserNotFound:
-        try:
-            return cd_bot.get_user(cache.ids[cache.names.index(name)])
-        except ValueError:
-            raise commands.UserNotFound(name)
 
 
 def to_decimal(val):
@@ -200,7 +197,6 @@ def sanitize(ctx, input):
         id = int(m.group(3))
         if m.group(1)[0] == "@":
             if len(m.group(1)) > 1 and m.group(1)[1] == "&":
-                sec = m.group(1)[1]
                 role = ctx.guild.get_role(id) or nf
                 return f"@{role}"
             else:
