@@ -3,6 +3,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os.path
 import re
+import grapheme
 intents = discord.Intents.default()
 intents.messages = True
 
@@ -19,11 +20,13 @@ async def on_message(message):
     if message.author.bot or message.content[0] in PREFIXES:
         return
 
+    print(message.content)
     wws = re.sub(r'\s', '', message.content)
-    if len(wws) > 0 and len(wws) % 8 == 0 and len(wws) // 8 <= MAX_HAND_SETS:
+    length = grapheme.length(wws)
+    if length > 0 and length % 8 == 0 and length // 8 <= MAX_HAND_SETS:
         out = ""
-        for i in range(0,len(wws),8):
-            out += f"{wws[i:i+4]} {wws[i+4:i+8]}\n".upper()
+        for i in range(0,length,8):
+            out += f"{grapheme.slice(wws, i, i+4)} {grapheme.slice(wws, i+4, i+8)}\n".upper()
         await message.channel.send(out)
 
     await kt_bot.process_commands(message)

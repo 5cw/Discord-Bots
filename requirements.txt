@@ -1,4 +1,5 @@
 python-dotenv==0.19.1
+grapheme==0.6.0
 aiodns==2.0.0
 aiohttp==3.6.2
 aiohttp-socks==0.3.8
