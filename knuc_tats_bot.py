@@ -39,6 +39,9 @@ async def on_message(message):
     guildID = message.guild.id
     if guildID not in server_max_hands.keys():
         server_max_hands[message.guild.id] = MAX_HAND_SETS
+    if len(message.content) < 1:
+        print(f"empty message with id {message.id}")
+        return
     if message.content[0] in PREFIXES:
         await kt_bot.process_commands(message)
         return
