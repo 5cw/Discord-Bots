@@ -75,7 +75,11 @@ async def max(ctx, *args):
              usage='to tweet most recent tat in channel, -s to skip confirmation')
 @commands.has_role("knuc tats login")
 async def tweet(ctx, *args):
-    to_tweet = server_recent_tat[ctx.guild.id][ctx.channel.id]
+    try:
+        to_tweet = server_recent_tat[ctx.guild.id][ctx.channel.id]
+    except KeyError:
+        await ctx.send("No knuc tats have been sent in this channel since the bot was last restarted.")
+        return
     if "-s" not in args:
         await ctx.send(f"You want to tweet this? (y/n)\n>>> {to_tweet}")
         msg = (await kt_bot.wait_for('message', check=lambda
