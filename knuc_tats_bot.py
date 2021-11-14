@@ -59,15 +59,14 @@ async def on_message(message):
              usage='(num_hand_sets) to change max number of hand sets, no parameters to check current max')
 @commands.is_owner()
 async def max(ctx, *args):
-    global MAX_HAND_SETS
     if len(args) == 0:
-        await ctx.send(f"Maximum sets of hands is currently {server_max_hands[ctx.guild.id]}")
+        await ctx.send(f"Maximum sets of hands is currently {server_max_hands[ctx.guild.id]}.{looks_like(server_max_hands[ctx.guild.id])}")
         return
     try:
         amount = int(args[0])
         if 0 < amount < 100:
             server_max_hands[ctx.guild.id] = amount
-            await ctx.send(f"Maximum sets of hands changed to {amount}")
+            await ctx.send(f"Maximum sets of hands changed to {amount}.{looks_like(amount)}")
         else:
             await ctx.send("invalid number of hands")
     except ValueError:
@@ -83,13 +82,16 @@ async def tweet(ctx, *args):
     except KeyError:
         await ctx.send("No knuc tats have been sent in this channel since the bot was last restarted.")
         return
+    if len(to_tweet) > 240:
+        await ctx.send("Too many characters to tweet.")
+        return
     if "-s" not in args:
         await ctx.send(f"You want to tweet this? (y/n)\n>>> {to_tweet}")
-        msg = (await kt_bot.wait_for('message', check=lambda
+        confirm = (await kt_bot.wait_for('message', check=lambda
             message: message.author.id == ctx.author.id and message.channel.id == ctx.channel.id)).content
     else:
-        msg = 'y'
-    if msg.lower() in ['y', 'yes']:
+        confirm = 'y'
+    if confirm and confirm.lower()[0] == 'y':
         try:
             response = api.update_status(to_tweet)
             await ctx.send(f"Tweet successful!\nhttps://twitter.com/uvmknuctats/status/{response.id_str}")
@@ -107,6 +109,11 @@ def set_recent(message, tats):
     if message.guild.id not in server_recent_tat.keys():
         server_recent_tat[message.guild.id] = {}
     server_recent_tat[message.guild.id][message.channel.id] = tats
+
+def looks_like(amount):
+    out = "\nThis is what that looks like:\n>>> "
+    out += "HAND SETS\n" * amount
+    return out
 
 
 kt_bot.run(KT_TOKEN)
