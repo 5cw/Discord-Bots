@@ -55,12 +55,13 @@ async def on_message(message):
         set_recent(message, out)
 
 
-@kt_bot.command(name="knuc_max", help='owner uses to change max number of hand sets',
+@kt_bot.command(name="max", help='owner uses to change max number of hand sets',
              usage='(num_hand_sets) to change max number of hand sets, no parameters to check current max')
 @commands.is_owner()
 async def max(ctx, *args):
     if len(args) == 0:
-        await ctx.send(f"Maximum sets of hands is currently {server_max_hands[ctx.guild.id]}.{looks_like(server_max_hands[ctx.guild.id])}")
+        await ctx.send(f"Maximum sets of hands is currently {server_max_hands[ctx.guild.id]}."
+                       f"{looks_like(server_max_hands[ctx.guild.id])}")
         return
     try:
         amount = int(args[0])
