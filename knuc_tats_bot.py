@@ -1,10 +1,12 @@
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
+from time import time
 import os.path
 import re
 import grapheme
 import tweepy
+
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -17,6 +19,7 @@ KT_TOKEN = os.getenv('KT_TOKEN')
 MAX_HAND_SETS = 2
 server_max_hands = {}
 server_recent_tat = {}
+server_disabled = {}
 
 PREFIXES = "$!%"
 
@@ -32,6 +35,8 @@ api = tweepy.API(tw_auth)
 api.verify_credentials()
 
 
+KNUC_ADMIN_ROLES = [821184954116341780, 693144828590162030]
+
 @kt_bot.event
 async def on_message(message):
     if message.author.bot or message.guild is None:
@@ -44,6 +49,9 @@ async def on_message(message):
         return
     if message.content[0] in PREFIXES:
         await kt_bot.process_commands(message)
+        return
+    if time_left(message.guild.id, message.guild.id) is not None or \
+            time_left(message.guild.id, message.channel.id) is not None:
         return
     wws = re.sub(r'\s', '', message.content)
     length = grapheme.length(wws)
@@ -72,6 +80,110 @@ async def max(ctx, *args):
             await ctx.send("invalid number of hands")
     except ValueError:
         await ctx.send("invalid number of hands")
+
+
+@kt_bot.command(name="mute", help='mute bot in channel or server wide for period of time or until unmuted',
+             usage='(minutes) to mute for a number of minutes. -server to mute server-wide, -stop to unmute, -check to see how long it is muted for.')
+@commands.has_role("knuc tats login")
+async def mute(ctx, *args):
+    admin = False
+    for role in ctx.author.roles:
+        if role.id in KNUC_ADMIN_ROLES:
+            admin = True
+            break
+
+    args = list(args)
+    try:
+        args.remove("-check")
+        check = True
+    except ValueError:
+        check = False
+    try:
+        args.remove("-server")
+        server = True
+    except ValueError:
+        server = False
+    try:
+        args.remove("-stop")
+        stop = True
+    except ValueError:
+        stop = False
+
+    try:
+        amount = float(args[0])
+        if amount < 0 or amount > 60 * 24 * 30:
+            raise ValueError
+    except IndexError:
+        amount = -1
+    except ValueError:
+        await ctx.send("Invalid number of minutes.")
+        return
+
+    if not server:
+        ID = ctx.channel.id
+    else:
+        ID = ctx.guild.id
+
+    curr = time()
+
+    left = time_left(ctx.guild.id, ID)
+    s_left = time_left(ctx.guild.id, ctx.guild.id)
+
+
+    if check and stop:
+        await ctx.send("Cannot both check and stop mute.")
+
+    entity = ctx.guild.name if server else f"<#{ctx.channel.id}>"
+
+    if left is None and (check or stop):
+        if s_left is None:
+            await ctx.send(f"{entity} is not muted.")
+            return
+        else:
+            left = s_left
+            entity = ctx.guild.name
+            server = True
+
+    if check:
+        if left < 0:
+            await ctx.send(f"{entity} is muted indefinitely")
+            return
+        left = int(left)
+        m = left // 60
+        s = left % 60
+        await ctx.send(f"{entity} "
+                       f"is muted for {m} more minutes" + (f" and {s} more seconds." if s != 0 else "."))
+        return
+
+    if not admin:
+        await ctx.send("You do not have permissions to mute.")
+        return
+
+    if stop:
+        if server:
+            server_disabled[ctx.guild.id].clear()
+        else:
+            del server_disabled[ctx.guild.id][ctx.channel.id]
+        await ctx.send(f"{entity} has been unmuted.")
+        return
+
+    if amount > 0:
+        until = curr + (amount * 60)
+    else:
+        until = -1
+
+    server_disabled[ctx.guild.id][ID] = until
+
+    if amount < 0:
+        await ctx.send(f"{entity} has been muted indefinitely")
+        return
+
+    amount = int(amount * 60)
+    m = amount // 60
+    s = amount % 60
+    await ctx.send(f"{entity} "
+                   f"has been muted for {m} minutes" + (f" and {s} seconds." if s != 0 else "."))
+
 
 
 @kt_bot.command(name="tweet", help='people with "knuc tats login" role use to tweet most recent tat',
@@ -117,4 +229,22 @@ def looks_like(amount):
     return out
 
 
+def time_left(guildID, ID):
+    if guildID not in server_disabled.keys():
+        server_disabled[guildID] = {}
+
+    print(server_disabled)
+    if ID not in server_disabled[guildID].keys():
+        return None
+    curr = time()
+    until = server_disabled[guildID][ID]
+    if until > 0:
+        left = until - curr
+        print(left)
+        if left <= 0:
+            del server_disabled[guildID][ID]
+            return None
+        return left
+    else:
+        return -1
 kt_bot.run(KT_TOKEN)
