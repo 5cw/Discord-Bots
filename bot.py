@@ -1,8 +1,8 @@
 import subprocess
 
-p1 = subprocess.Popen('python cool_dollar_bot.py', shell=True)
-p2 = subprocess.Popen('python knuc_tats_bot.py', shell=True)
+cool_dollar_bot = subprocess.Popen('python cool_dollar_bot.py', shell=True)
+knuc_tats_bot = subprocess.Popen('python knuc_tats_bot.py', shell=True)
 
-p1.wait()
-p2.wait()
+cool_dollar_bot.wait()
+knuc_tats_bot.wait()
 

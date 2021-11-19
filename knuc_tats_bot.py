@@ -282,7 +282,7 @@ def to_seconds(parse: str) -> int:
     try:
         out = float(parse)
     except ValueError:
-        cleaned = re.sub(r'\s|,|and|for', '', parse).lower()
+        cleaned = re.sub(r'\s|,|and|for|\.', '', parse).lower()
         print(cleaned)
         out = 0
         for m in re.finditer(r"([-+]?\d*\.?\d*)"
