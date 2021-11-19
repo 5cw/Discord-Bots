@@ -9,7 +9,6 @@ cd_bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands
 ))
 dotenv.load_dotenv()
 CD_TOKEN = os.environ['CD_TOKEN']
-print(CD_TOKEN)
 converter = commands.UserConverter()
 
 
