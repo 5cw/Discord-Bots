@@ -34,8 +34,7 @@ api = tweepy.API(tw_auth)
 
 api.verify_credentials()
 
-
-KNUC_ADMIN_ROLES = [821184954116341780, 693144828590162030]
+KNUC_TATS_LOGIN_USERS = [999999999999999999, 999999999999999999, 999999999999999999, 999999999999999999]
 
 @kt_bot.event
 async def on_message(message):
@@ -64,8 +63,9 @@ async def on_message(message):
 
 
 @kt_bot.command(name="max", help='owner uses to change max number of hand sets',
-             usage='(num_hand_sets) to change max number of hand sets, no parameters to check current max')
-@commands.is_owner()
+             usage='(num_hand_sets) to change max number of hand sets, no parameters to check current max. '
+                   'Only members with permissions to manage server may use.')
+@commands.has_permissions(manage_guild=True)
 async def max(ctx, *args):
     if len(args) == 0:
         await ctx.send(f"Maximum sets of hands is currently {server_max_hands[ctx.guild.id]}."
@@ -83,15 +83,12 @@ async def max(ctx, *args):
 
 
 @kt_bot.command(name="mute", help='mute bot in channel or server wide for period of time or until unmuted',
-             usage='(minutes) to mute for a number of minutes. -server to mute server-wide, -stop to unmute, -check to see how long it is muted for.')
-@commands.has_role("knuc tats login")
+             usage='(minutes) to mute for a number of minutes, '
+                   'leave blank to mute indefinitely. -server to mute server-wide, '
+                   '-stop to unmute, -check to see how long a channel or server is muted for. '
+                   'Only people with permission to manage channels may use this command.')
 async def mute(ctx, *args):
-    admin = False
-    for role in ctx.author.roles:
-        if role.id in KNUC_ADMIN_ROLES:
-            admin = True
-            break
-
+    admin = ctx.author.guild_permissions.manage_channels
     args = list(args)
     try:
         args.remove("-check")
@@ -146,13 +143,10 @@ async def mute(ctx, *args):
 
     if check:
         if left < 0:
-            await ctx.send(f"{entity} is muted indefinitely")
+            await ctx.send(f"{entity} is muted indefinitely. %mute -stop to unmute.")
             return
-        left = int(left)
-        m = left // 60
-        s = left % 60
-        await ctx.send(f"{entity} "
-                       f"is muted for {m} more minutes" + (f" and {s} more seconds." if s != 0 else "."))
+
+        await ctx.send(f"{entity} is muted for {time_string(int(left))}.")
         return
 
     if not admin:
@@ -175,21 +169,19 @@ async def mute(ctx, *args):
     server_disabled[ctx.guild.id][ID] = until
 
     if amount < 0:
-        await ctx.send(f"{entity} has been muted indefinitely")
+        await ctx.send(f"{entity} has been muted indefinitely. %mute -stop to unmute.")
         return
 
-    amount = int(amount * 60)
-    m = amount // 60
-    s = amount % 60
-    await ctx.send(f"{entity} "
-                   f"has been muted for {m} minutes" + (f" and {s} seconds." if s != 0 else "."))
-
+    await ctx.send(f"{entity} has been muted for {time_string(int(amount * 60))}")
 
 
 @kt_bot.command(name="tweet", help='people with "knuc tats login" role use to tweet most recent tat',
-             usage='to tweet most recent tat in channel, -s to skip confirmation')
-@commands.has_role("knuc tats login")
+             usage='to tweet most recent tat in channel, -s to skip confirmation. '
+                   'Only users known to have twitter login may use. '
+                   'User IDs are hardcoded into bot, check with lexi if you want your discord ID added.')
 async def tweet(ctx, *args):
+    if ctx.author.id not in KNUC_TATS_LOGIN_USERS:
+        return
     try:
         to_tweet = server_recent_tat[ctx.guild.id][ctx.channel.id]
     except KeyError:
@@ -232,8 +224,6 @@ def looks_like(amount):
 def time_left(guildID, ID):
     if guildID not in server_disabled.keys():
         server_disabled[guildID] = {}
-
-    print(server_disabled)
     if ID not in server_disabled[guildID].keys():
         return None
     curr = time()
@@ -247,4 +237,33 @@ def time_left(guildID, ID):
         return left
     else:
         return -1
+
+def time_string(seconds):
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    years, days = divmod(days, 365)
+    weeks, days = divmod(days, 7)
+    segments = []
+    if years > 0:
+        segments.append(f"{years} years")
+    if weeks > 0:
+        segments.append(f"{weeks} weeks")
+    if days > 0:
+        segments.append(f"{days} days")
+    if hours > 0:
+        segments.append(f"{hours} hours")
+    if minutes > 0:
+        segments.append(f"{minutes} minutes")
+    if seconds > 0 or len(segments) == 0:
+        segments.append(f"{seconds} seconds")
+
+    out = ""
+    for i in segments[:-1]:
+        out += i + ", "
+    if len(segments) > 1:
+        out += "and "
+    out += segments[-1]
+    return out
+
 kt_bot.run(KT_TOKEN)
