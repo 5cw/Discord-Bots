@@ -7,7 +7,6 @@ import re
 import grapheme
 import tweepy
 
-
 intents = discord.Intents.default()
 intents.messages = True
 
@@ -36,6 +35,18 @@ api.verify_credentials()
 
 KNUC_TATS_LOGIN_USERS = [999999999999999999, 999999999999999999, 999999999999999999, 999999999999999999]
 
+time_dict = {
+    's': 1,
+    'm': 60
+}
+time_dict['h'] = 60 * time_dict['m']
+time_dict['d'] = 24 * time_dict['h']
+time_dict['w'] = 7 * time_dict['d']
+time_dict['y'] = 365 * time_dict['d']
+
+THOUSAND_YEARS_IN_SECS = time_dict["y"] * 1000
+
+
 @kt_bot.event
 async def on_message(message):
     if message.author.bot or message.guild is None:
@@ -63,8 +74,8 @@ async def on_message(message):
 
 
 @kt_bot.command(name="max", help='owner uses to change max number of hand sets',
-             usage='(num_hand_sets) to change max number of hand sets, no parameters to check current max. '
-                   'Only members with permissions to manage server may use.')
+                usage='(num_hand_sets) to change max number of hand sets, no parameters to check current max. '
+                      'Only members with permissions to manage server may use.')
 @commands.has_permissions(manage_guild=True)
 async def max(ctx, *args):
     if len(args) == 0:
@@ -83,10 +94,10 @@ async def max(ctx, *args):
 
 
 @kt_bot.command(name="mute", help='mute bot in channel or server wide for period of time or until unmuted',
-             usage='(minutes) to mute for a number of minutes, '
-                   'leave blank to mute indefinitely. -server to mute server-wide, '
-                   '-stop to unmute, -check to see how long a channel or server is muted for. '
-                   'Only people with permission to manage channels may use this command.')
+                usage='(minutes) or %mute #y#w#d#h#m#s, '
+                      'leave blank to mute indefinitely. -server to mute server-wide, '
+                      '-stop to unmute, -check to see how long a channel or server is muted for. '
+                      'Only people with permission to manage channels may use this command.')
 async def mute(ctx, *args):
     admin = ctx.author.guild_permissions.manage_channels
     args = list(args)
@@ -106,14 +117,9 @@ async def mute(ctx, *args):
     except ValueError:
         stop = False
 
-    try:
-        amount = float(args[0])
-        if amount < 0 or amount > 60 * 24 * 30:
-            raise ValueError
-    except IndexError:
-        amount = -1
-    except ValueError:
-        await ctx.send("Invalid number of minutes.")
+    amount = to_seconds("".join(args))
+    if amount is None:
+        await ctx.send("invalid amount of time.")
         return
 
     if not server:
@@ -125,7 +131,6 @@ async def mute(ctx, *args):
 
     left = time_left(ctx.guild.id, ID)
     s_left = time_left(ctx.guild.id, ctx.guild.id)
-
 
     if check and stop:
         await ctx.send("Cannot both check and stop mute.")
@@ -146,7 +151,7 @@ async def mute(ctx, *args):
             await ctx.send(f"{entity} is muted indefinitely. %mute -stop to unmute.")
             return
 
-        await ctx.send(f"{entity} is muted for {time_string(int(left))}.")
+        await ctx.send(f"{entity} will be muted for {time_string(int(left))} longer.")
         return
 
     if not admin:
@@ -162,7 +167,7 @@ async def mute(ctx, *args):
         return
 
     if amount > 0:
-        until = curr + (amount * 60)
+        until = curr + amount
     else:
         until = -1
 
@@ -172,13 +177,13 @@ async def mute(ctx, *args):
         await ctx.send(f"{entity} has been muted indefinitely. %mute -stop to unmute.")
         return
 
-    await ctx.send(f"{entity} has been muted for {time_string(int(amount * 60))}")
+    await ctx.send(f"{entity} has been muted for {time_string(amount)}.")
 
 
 @kt_bot.command(name="tweet", help='people with "knuc tats login" role use to tweet most recent tat',
-             usage='to tweet most recent tat in channel, -s to skip confirmation. '
-                   'Only users known to have twitter login may use. '
-                   'User IDs are hardcoded into bot, check with lexi if you want your discord ID added.')
+                usage='to tweet most recent tat in channel, -s to skip confirmation. '
+                      'Only users known to have twitter login may use. '
+                      'User IDs are hardcoded into bot, check with lexi if you want your discord ID added.')
 async def tweet(ctx, *args):
     if ctx.author.id not in KNUC_TATS_LOGIN_USERS:
         return
@@ -206,22 +211,25 @@ async def tweet(ctx, *args):
     else:
         await ctx.send("Tweet cancelled.")
 
+
 @kt_bot.event
 async def on_ready():
     print("ready!")
 
-def set_recent(message, tats):
+
+def set_recent(message: discord.Message, tats: str):
     if message.guild.id not in server_recent_tat.keys():
         server_recent_tat[message.guild.id] = {}
     server_recent_tat[message.guild.id][message.channel.id] = tats
 
-def looks_like(amount):
+
+def looks_like(amount: int):
     out = "\nThis is what that looks like:\n>>> "
     out += "HAND SETS\n" * amount
     return out
 
 
-def time_left(guildID, ID):
+def time_left(guildID: int, ID: int):
     if guildID not in server_disabled.keys():
         server_disabled[guildID] = {}
     if ID not in server_disabled[guildID].keys():
@@ -238,7 +246,8 @@ def time_left(guildID, ID):
     else:
         return -1
 
-def time_string(seconds):
+
+def time_string(seconds: int):
     minutes, seconds = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
@@ -246,17 +255,17 @@ def time_string(seconds):
     weeks, days = divmod(days, 7)
     segments = []
     if years > 0:
-        segments.append(f"{years} years")
+        segments.append(f"{years} year" + ("s" if years > 1 else ""))
     if weeks > 0:
-        segments.append(f"{weeks} weeks")
+        segments.append(f"{weeks} week" + ("s" if weeks > 1 else ""))
     if days > 0:
-        segments.append(f"{days} days")
+        segments.append(f"{days} day" + ("s" if days > 1 else ""))
     if hours > 0:
-        segments.append(f"{hours} hours")
+        segments.append(f"{hours} hour" + ("s" if hours > 1 else ""))
     if minutes > 0:
-        segments.append(f"{minutes} minutes")
+        segments.append(f"{minutes} minute" + ("s" if minutes > 1 else ""))
     if seconds > 0 or len(segments) == 0:
-        segments.append(f"{seconds} seconds")
+        segments.append(f"{seconds} second" + ("s" if seconds > 1 else ""))
 
     out = ""
     for i in segments[:-1]:
@@ -265,5 +274,25 @@ def time_string(seconds):
         out += "and "
     out += segments[-1]
     return out
+
+
+def to_seconds(parse: str) -> int:
+    if parse == "":
+        return -1
+    try:
+        out = float(parse)
+    except ValueError:
+        cleaned = re.sub(r'\s|,|and|for', '', parse).lower()
+        print(cleaned)
+        out = 0
+        for m in re.finditer(r"([-+]?\d*\.?\d*)"
+                             r"(y(?:ears?)?|w(?:eeks?)?|d(?:ays?)?|h(?:ours?)?|m(?:inutes?)?|s(?:econds?)?)",
+                             cleaned):
+            out += float(m.group(1)) * time_dict[m.group(2)[0]]
+    out = int(out)
+    if out <= 0 or out >= THOUSAND_YEARS_IN_SECS:
+        return None
+    return out
+
 
 kt_bot.run(KT_TOKEN)
