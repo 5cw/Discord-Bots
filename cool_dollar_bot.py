@@ -7,8 +7,8 @@ intents.guilds = True
 cd_bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands.DefaultHelpCommand(
     no_category='Commands'
 ))
-load_dotenv()
-CD_TOKEN = os.getenv('CD_TOKEN')
+dotenv.load_dotenv()
+CD_TOKEN = os.environ['CD_TOKEN']
 converter = commands.UserConverter()
 
 

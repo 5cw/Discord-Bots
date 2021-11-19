@@ -2,11 +2,13 @@ import re
 import gspread
 
 import discord
+import json
 from discord.ext import commands
-from dotenv import load_dotenv
+import dotenv
 from decimal import *
 import asyncio
 import os.path
+
 
 
 class UserBannedError(commands.CommandError):
@@ -22,17 +24,22 @@ class DecimalizationError(commands.CommandError):
 class UnknownAPIError(commands.CommandError):
     pass
 
-load_dotenv()
-MAX_DIGITS = int(os.getenv('MAX_DIGITS'))
+dotenv.load_dotenv()
+
+MAX_DIGITS = int(os.environ['MAX_DIGITS'])
 getcontext().prec = MAX_DIGITS + 5
 
 class Cache:
     def __init__(self):
-        load_dotenv()
-        SPREADSHEET_ID = os.getenv('SPREADSHEET_ID')
-        SCOPES = os.getenv('SCOPES').split(',')
-        JSON = os.getenv('JSON')
-        self.gc = gspread.service_account(filename=JSON, scopes=SCOPES)
+        SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
+        SCOPES = os.environ['SCOPES'].split(',')
+        JSON = os.environ['JSON']
+        if JSON is not None:
+            self.gc = gspread.service_account(filename=JSON, scopes=SCOPES)
+        else:
+            JSON_TEXT = os.environ['JSON_TEXT']
+            d = json.loads(JSON_TEXT)
+            self.gc = gspread.service_account_from_dict(info=d, scopes=SCOPES)
         self.sh = self.gc.open_by_key(SPREADSHEET_ID)
         self.MAX_BALANCE = Decimal("10") ** Decimal(MAX_DIGITS)
         self.rate_limited = False
@@ -186,3 +193,4 @@ class Cache:
         await self.lock()
         self.banned.remove(ban_user.id)
         self.unlock()
+

@@ -14,7 +14,7 @@ kt_bot = commands.Bot(command_prefix="%", intents=intents, help_command=commands
     no_category='Commands'
 ))
 load_dotenv()
-KT_TOKEN = os.getenv('KT_TOKEN')
+KT_TOKEN = os.environ['KT_TOKEN']
 MAX_HAND_SETS = 2
 server_max_hands = {}
 server_recent_tat = {}
@@ -22,11 +22,11 @@ server_disabled = {}
 
 PREFIXES = "$!%"
 
-TWT_API_KEY = os.getenv("TWT_API_KEY")
-TWT_API_SECRET = os.getenv("TWT_API_SECRET")
-TWT_BEARER_TOKEN = os.getenv("TWT_BEARER_TOKEN")
-TWT_ACCESS_TOKEN = os.getenv("TWT_ACCESS_TOKEN")
-TWT_ACCESS_SECRET = os.getenv("TWT_ACCESS_SECRET")
+TWT_API_KEY = os.environ["TWT_API_KEY"]
+TWT_API_SECRET = os.environ["TWT_API_SECRET"]
+TWT_BEARER_TOKEN = os.environ["TWT_BEARER_TOKEN"]
+TWT_ACCESS_TOKEN = os.environ["TWT_ACCESS_TOKEN"]
+TWT_ACCESS_SECRET = os.environ["TWT_ACCESS_SECRET"]
 tw_auth = tweepy.OAuthHandler(TWT_API_KEY, TWT_API_SECRET)
 tw_auth.set_access_token(TWT_ACCESS_TOKEN, TWT_ACCESS_SECRET)
 api = tweepy.API(tw_auth)
