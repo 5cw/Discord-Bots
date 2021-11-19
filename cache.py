@@ -33,7 +33,7 @@ class Cache:
     def __init__(self):
         SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
         SCOPES = os.environ['SCOPES'].split(',')
-        JSON = os.environ['JSON']
+        JSON = os.environ.get("JSON")
         if JSON is not None:
             self.gc = gspread.service_account(filename=JSON, scopes=SCOPES)
         else:
