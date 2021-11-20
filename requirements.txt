@@ -1,3 +1,8 @@
+#basics
+pip~=21.1.2
+wheel~=0.36.2
+setuptools~=57.0.0
+
 #needed for both bots
 python-dotenv~=0.19.1
 discord~=1.7.3
@@ -9,8 +14,3 @@ tweepy~=4.3.0
 #just needed for currency_bot
 gspread~=4.0.1
 
-
-#basics
-pip~=21.1.2
-wheel~=0.36.2
-setuptools~=57.0.0

@@ -1,27 +1,10 @@
-import re
+from errors import UnknownAPIError, UserBannedError
+from constants import JSON_CREDS, SCOPES, SPREADSHEET_ID
 import gspread
-
-import discord
-import json
-from discord.ext import commands
 import dotenv
 from decimal import *
 import asyncio
 import os.path
-
-
-class UserBannedError(commands.CommandError):
-    pass
-
-
-class DecimalizationError(commands.CommandError):
-    def __init__(self, amount):
-        super()
-        self.amount = amount
-
-
-class UnknownAPIError(commands.CommandError):
-    pass
 
 dotenv.load_dotenv()
 
@@ -30,18 +13,7 @@ getcontext().prec = MAX_DIGITS + 5
 
 class Cache:
     def __init__(self):
-        SPREADSHEET_ID = os.environ['SPREADSHEET_ID']
-        SCOPES = [
-            "https://spreadsheets.google.com/feeds",
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive"]
-        JSON = os.environ.get("JSON")
-        if JSON is not None:
-            self.gc = gspread.service_account(filename=JSON, scopes=SCOPES)
-        else:
-            JSON_TEXT = os.environ['JSON_TEXT']
-            d = json.loads(JSON_TEXT)
-            self.gc = gspread.service_account_from_dict(info=d, scopes=SCOPES)
+        self.gc = gspread.service_account_from_dict(info=JSON_CREDS, scopes=SCOPES)
         self.sh = self.gc.open_by_key(SPREADSHEET_ID)
         self.MAX_BALANCE = Decimal("10") ** Decimal(MAX_DIGITS)
         self.rate_limited = False

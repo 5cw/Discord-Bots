@@ -14,7 +14,7 @@ kt_bot = commands.Bot(command_prefix="%", intents=intents, help_command=commands
     no_category='Commands'
 ))
 load_dotenv()
-KT_TOKEN = os.environ['KT_TOKEN']
+TOKEN = os.environ['KNUC_TATS_BOT_TOKEN']
 MAX_HAND_SETS = 2
 server_max_hands = {}
 server_recent_tat = {}
@@ -302,4 +302,4 @@ def to_seconds(parse: str) -> int:
     return out
 
 
-kt_bot.run(KT_TOKEN)
+kt_bot.run(TOKEN)

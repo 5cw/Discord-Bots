@@ -3,9 +3,6 @@
 
 Built on python 3.8.12, no guarantees on other versions.
 
-Necessary files:
-* [currency_bot.py](currency_bot.py) (file to run)
-* [cache.py](cache.py)
 
 Dependencies:
 * [gspread](https://docs.gspread.org/en/latest/)
@@ -15,12 +12,12 @@ Dependencies:
 Environment variables:
 ```
 required
-C_TOKEN=Discord Bot Token
+CURRENCY_BOT_TOKEN=Discord Bot Token
 CURRENCY_NAME=My Currency Name
 MAX_DIGITS=100 or whatever number you want
-SPREADSHEET_ID=Google Sheets ID
+SPREADSHEET_ID=Google Sheet ID
 either
-JSON=Google_Sheets_API_Creds.json
+JSON_FILE=Google_Sheets_API_Creds_Filename.json (in same folder as python files)
 or
 JSON_TEXT={Google Sheets API Creds JSON string}
 
@@ -32,3 +29,5 @@ Environment variables can go in a .env file, or in the environment variables sec
 Some of this information is sensitive, so be careful where you put a .env file.
 
 You will need to enable the [Google Sheets API.](https://developers.google.com/workspace/guides/create-project)
+
+You'll need to make a spreadsheet with two sheets, one named "Balances" and the other named "bts" (hide the second one.)
