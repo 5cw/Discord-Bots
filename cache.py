@@ -10,7 +10,6 @@ import asyncio
 import os.path
 
 
-
 class UserBannedError(commands.CommandError):
     pass
 

@@ -8,14 +8,15 @@ cd_bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands
     no_category='Commands'
 ))
 dotenv.load_dotenv()
-CD_TOKEN = os.environ['CD_TOKEN']
+C_TOKEN = os.environ['CD_TOKEN']
 converter = commands.UserConverter()
 
+CURRENCY_NAME = os.environ['CURRENCY_NAME']
 
 global cache
 
 
-@cd_bot.command(name='award', help='admins can award cool dollars at their leisure.',
+@cd_bot.command(name='award', help=f'admins can award {CURRENCY_NAME.lower()} at their leisure.',
              usage='(name) (amount)')
 async def award(ctx, *args):
     if not is_admin(ctx.author):
@@ -37,7 +38,7 @@ async def award(ctx, *args):
         amount = new_bal - bal
     await cache.set_balance(user, new_bal)
     await cache.push_cache()
-    await ctx.send(f"Awarded {amount:.2f} Cool Dollars to {await cache.get_name(user)}")
+    await ctx.send(f"Awarded {amount:.2f} {CURRENCY_NAME} to {await cache.get_name(user)}")
 
 
 @cd_bot.command(name='setup', help='set up your cool dollar account',
@@ -53,7 +54,7 @@ async def setup(ctx, *, args=None):
         await cache.set_name(ctx.author, name)
     else:
         name = str(ctx.author)
-    await ctx.send(f"Welcome to the economy, {name}! Your balance is 25.00 Cool Dollars.")
+    await ctx.send(f"Welcome to the economy, {name}! Your balance is 25.00 {CURRENCY_NAME}.")
     await cache.push_cache()
 
 
@@ -72,7 +73,7 @@ async def balance(ctx, *, args=None):
         user = ctx.author
 
     bal = await cache.get_balance(user)
-    await ctx.send(f"{await cache.get_name(user)} has {bal:.2f} Cool Dollars")
+    await ctx.send(f"{await cache.get_name(user)} has {bal:.2f} {CURRENCY_NAME}")
 
 
 @cd_bot.command(name='edit', hidden=True)
@@ -89,7 +90,7 @@ async def test(ctx, *args):
     print(cache.sh.values_batch_get(["Balances!A:B", "bts!A:A", "bts!B:B"], {"major_dimension": "COLUMNS"}))
 
 
-@cd_bot.command(name='pay', help='pay someone cool dollars',
+@cd_bot.command(name='pay', help=f'pay someone {CURRENCY_NAME.lower()}',
              usage='(name) (amount)')
 async def pay(ctx, *args):
     if len(args) < 2:
@@ -100,7 +101,7 @@ async def pay(ctx, *args):
     amount = to_decimal(args[-1])
     if rec_user.id == ctx.author.id:
         await ctx.send(
-            f"Cool. You sent yourself {amount:.2f} Cool Dollars.\nCongratulations. You have the same amount of money.")
+            f"Cool. You sent yourself {amount:.2f} {CURRENCY_NAME}.\nCongratulations. You have the same amount of money.")
         return
     send_balance = await cache.get_balance(ctx.author)
     rec_balance = await cache.get_balance(rec_user)
@@ -202,7 +203,7 @@ def sanitize(ctx, input):
             else:
                 user = ctx.guild.get_member(id)
                 if user is None:
-                    name = user.nick
+                    name = nf
                 else:
                     name = user.display_name
                 return f"@{name}"
@@ -232,7 +233,7 @@ if log_errors_in_channel:
             return
         elif isinstance(error, DecimalizationError):
             amount = sanitize(ctx, error.amount)
-            await ctx.send(f"{amount} is not a valid amount of Cool Dollars.")
+            await ctx.send(f"{amount} is not a valid amount of {CURRENCY_NAME}.")
             return
         elif isinstance(error, commands.UserNotFound):
             name = sanitize(ctx, error.argument)
