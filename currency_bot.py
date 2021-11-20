@@ -12,11 +12,21 @@ C_TOKEN = os.environ['C_TOKEN']
 converter = commands.UserConverter()
 
 CURRENCY_NAME = os.environ['CURRENCY_NAME']
+PLURAL_CURRENCY_NAME = os.environ.get('PLURAL_CURRENCY_NAME')
+if PLURAL_CURRENCY_NAME is None:
+    PLURAL_CURRENCY_NAME = CURRENCY_NAME + "s"
 
 global cache
 
+def plural_currency(amt):
+    if amt != 1:
+        return PLURAL_CURRENCY_NAME
+    else:
+        return CURRENCY_NAME
 
-@cd_bot.command(name='award', help=f'admins can award {CURRENCY_NAME.lower()} at their leisure.',
+
+
+@cd_bot.command(name='award', help=f'admins can award {PLURAL_CURRENCY_NAME.lower()} at their leisure.',
              usage='(name) (amount)')
 async def award(ctx, *args):
     if not is_admin(ctx.author):
@@ -38,10 +48,10 @@ async def award(ctx, *args):
         amount = new_bal - bal
     await cache.set_balance(user, new_bal)
     await cache.push_cache()
-    await ctx.send(f"Awarded {amount:.2f} {CURRENCY_NAME} to {await cache.get_name(user)}")
+    await ctx.send(f"Awarded {amount:.2f} {plural_currency(amount)} to {await cache.get_name(user)}")
 
 
-@cd_bot.command(name='setup', help='set up your cool dollar account',
+@cd_bot.command(name='setup', help=f'set up your {PLURAL_CURRENCY_NAME} account',
              usage='[name]')
 async def setup(ctx, *, args=None):
     if ctx.author.id in cache.ids:
@@ -54,7 +64,7 @@ async def setup(ctx, *, args=None):
         await cache.set_name(ctx.author, name)
     else:
         name = str(ctx.author)
-    await ctx.send(f"Welcome to the economy, {name}! Your balance is 25.00 {CURRENCY_NAME}.")
+    await ctx.send(f"Welcome to the economy, {name}! Your balance is 25.00 {plural_currency(25)}.")
     await cache.push_cache()
 
 
@@ -73,7 +83,7 @@ async def balance(ctx, *, args=None):
         user = ctx.author
 
     bal = await cache.get_balance(user)
-    await ctx.send(f"{await cache.get_name(user)} has {bal:.2f} {CURRENCY_NAME}")
+    await ctx.send(f"{await cache.get_name(user)} has {bal:.2f} {plural_currency()}")
 
 
 @cd_bot.command(name='edit', hidden=True)
@@ -90,7 +100,7 @@ async def test(ctx, *args):
     print(cache.sh.values_batch_get(["Balances!A:B", "bts!A:A", "bts!B:B"], {"major_dimension": "COLUMNS"}))
 
 
-@cd_bot.command(name='pay', help=f'pay someone {CURRENCY_NAME.lower()}',
+@cd_bot.command(name='pay', help=f'pay someone {PLURAL_CURRENCY_NAME.lower()}',
              usage='(name) (amount)')
 async def pay(ctx, *args):
     if len(args) < 2:
@@ -101,7 +111,7 @@ async def pay(ctx, *args):
     amount = to_decimal(args[-1])
     if rec_user.id == ctx.author.id:
         await ctx.send(
-            f"Cool. You sent yourself {amount:.2f} {CURRENCY_NAME}.\nCongratulations. You have the same amount of money.")
+            f"Cool. You sent yourself {amount:.2f} {plural_currency()}.\nCongratulations. You have the same amount of money.")
         return
     send_balance = await cache.get_balance(ctx.author)
     rec_balance = await cache.get_balance(rec_user)
@@ -233,7 +243,7 @@ if log_errors_in_channel:
             return
         elif isinstance(error, DecimalizationError):
             amount = sanitize(ctx, error.amount)
-            await ctx.send(f"{amount} is not a valid amount of {CURRENCY_NAME}.")
+            await ctx.send(f"{amount} is not a valid amount of {plural_currency()}.")
             return
         elif isinstance(error, commands.UserNotFound):
             name = sanitize(ctx, error.argument)

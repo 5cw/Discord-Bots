@@ -1,16 +1,19 @@
 # Currency Bot
 ### Bot to manage the currency on your discord server in a spreadsheet.
 
-Required environment variables:
+Environment variables:
 ```
+required
 C_TOKEN=Discord Bot Token
 CURRENCY_NAME=My Currency Name
 MAX_DIGITS=100 or whatever number you want
 SPREADSHEET_ID=Google Sheets ID
-
 either
 JSON=Google_Sheets_API_Creds.json
 or
 JSON_TEXT={Google Sheets API Creds JSON string}
 
+optional
+PLURAL_CURRENCY_NAME=My Currency Name Plural (if plural is something other than adding an s.)
 ```
+

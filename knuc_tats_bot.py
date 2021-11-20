@@ -32,7 +32,12 @@ api = tweepy.API(tw_auth)
 
 api.verify_credentials()
 
-KNUC_TATS_LOGIN_USERS = [999999999999999999, 999999999999999999, 999999999999999999, 999999999999999999]
+KNUC_TATS_LOGIN_USERS = [int(i) for i in os.environ['KNUC_TATS_LOGIN_USERS'].split(',')]
+bw_string = os.environ.get('BANNED_WORDS')
+if bw_string is None:
+    BANNED_WORDS = []
+else:
+    BANNED_WORDS = bw_string.split(',')
 
 time_dict = {
     's': 1,
@@ -63,6 +68,9 @@ async def on_message(message):
             time_left(message.guild.id, message.channel.id) is not None:
         return
     wws = re.sub(r'\s', '', message.content)
+    for word in BANNED_WORDS:
+        if word in wws:
+            return
     length = grapheme.length(wws)
     if length > 0 and length % 8 == 0 and length // 8 <= server_max_hands[guildID]:
         out = ""
