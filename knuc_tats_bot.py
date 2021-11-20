@@ -24,7 +24,6 @@ PREFIXES = "$!%"
 
 TWT_API_KEY = os.environ["TWT_API_KEY"]
 TWT_API_SECRET = os.environ["TWT_API_SECRET"]
-TWT_BEARER_TOKEN = os.environ["TWT_BEARER_TOKEN"]
 TWT_ACCESS_TOKEN = os.environ["TWT_ACCESS_TOKEN"]
 TWT_ACCESS_SECRET = os.environ["TWT_ACCESS_SECRET"]
 tw_auth = tweepy.OAuthHandler(TWT_API_KEY, TWT_API_SECRET)
