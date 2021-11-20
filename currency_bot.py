@@ -8,7 +8,7 @@ cd_bot = commands.Bot(command_prefix='$', intents=intents, help_command=commands
     no_category='Commands'
 ))
 dotenv.load_dotenv()
-C_TOKEN = os.environ['CD_TOKEN']
+C_TOKEN = os.environ['C_TOKEN']
 converter = commands.UserConverter()
 
 CURRENCY_NAME = os.environ['CURRENCY_NAME']
@@ -258,4 +258,4 @@ async def on_ready():
     print(getcontext().prec)
 
 
-cd_bot.run(CD_TOKEN)
+cd_bot.run(C_TOKEN)
