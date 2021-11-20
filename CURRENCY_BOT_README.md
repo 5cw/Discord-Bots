@@ -1,6 +1,17 @@
 # Currency Bot
 ### Bot to manage the currency on your discord server in a spreadsheet.
 
+Built on python 3.8.12, no guarantees on other versions.
+
+Necessary files:
+* [currency_bot.py](currency_bot.py) (file to run)
+* [cache.py](cache.py)
+
+Dependencies:
+* [gspread](https://docs.gspread.org/en/latest/)
+* [discord](https://discordpy.readthedocs.io/en/stable/)
+* [python-dotenv](https://pypi.org/project/python-dotenv/)
+
 Environment variables:
 ```
 required

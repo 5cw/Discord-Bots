@@ -1,8 +1,8 @@
-python-dotenv==0.19.1
-grapheme==0.6.0
-tweepy==4.3.0
-discord==1.7.3
-gspread==4.0.1
+python-dotenv~=0.19.1
+grapheme~=0.6.0
+tweepy~=4.3.0
+discord~=1.7.3
+gspread~=4.0.1
 
 pip~=21.1.2
 wheel~=0.36.2
