@@ -27,4 +27,8 @@ JSON_TEXT={Google Sheets API Creds JSON string}
 optional
 PLURAL_CURRENCY_NAME=My Currency Name Plural (if plural is something other than adding an s.)
 ```
+Environment variables can go in a .env file, or in the environment variables section of a hosting service (like [heroku](https://heroku.com).)
 
+Some of this information is sensitive, so be careful where you put a .env file.
+
+You will need to enable the [Google Sheets API.](https://developers.google.com/workspace/guides/create-project)
