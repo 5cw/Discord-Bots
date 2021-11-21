@@ -2,7 +2,7 @@ from currency_cog import CurrencyCog
 from errors import UserBannedError, DecimalizationError
 from discord.ext import commands
 
-class ErrorHandlingCog(CurrencyCog):
+class ErrorHandler(CurrencyCog):
 
     @commands.check
     async def is_rate_limited(self, ctx):

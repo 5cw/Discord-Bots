@@ -21,6 +21,7 @@ KNUC_TATS_LOGIN_USERS=comma,separated,list,of,discord,user,ids
 
 optional
 BANNED_WORDS=comma,separated,list,of,banned,words
+MAX_HAND_SETS=default maximum number of sets of hands (can be modified per-server, defaults to 2.)
 ```
 Environment variables can go in a .env file, or in the environment variables section of a hosting service (like [heroku](https://heroku.com).)
 

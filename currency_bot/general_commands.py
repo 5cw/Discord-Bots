@@ -2,8 +2,8 @@ from discord.ext import commands
 from currency_cog import CurrencyCog
 from constants import PLURAL_CURRENCY_NAME
 
-class General(CurrencyCog):
 
+class General(CurrencyCog):
 
     @commands.command(name='setup', help=f'set up your {PLURAL_CURRENCY_NAME} account',
                       usage='[name]')

@@ -2,7 +2,7 @@ import asyncio
 from cache import Cache
 from general_commands import General
 from admin_commands import Admin
-from error_handling_cog import ErrorHandlingCog
+from error_handler import ErrorHandler
 from constants import TOKEN
 import discord
 from discord.ext import commands
@@ -17,8 +17,12 @@ bot = commands.Bot(command_prefix='$', intents=intents)
 cache = Cache()
 asyncio.run(cache.fetch_cache())
 
-bot.add_cog(General(bot, cache))
+general = General(bot, cache)
+
+bot.add_cog(general)
 bot.add_cog(Admin(bot, cache))
-bot.add_cog(ErrorHandlingCog(bot, cache))
+bot.add_cog(ErrorHandler(bot, cache))
+
+bot.help_command.cog = general
 
 bot.run(TOKEN)
