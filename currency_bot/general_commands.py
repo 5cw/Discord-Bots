@@ -83,3 +83,9 @@ class General(CurrencyCog):
         await self.cache.set_name(ctx.author, name)
         await ctx.send(f"Your name was was set to {name}")
         await self.cache.push_cache()
+
+    @commands.command(name='spreadsheet', help='sends the spreadsheet url',
+                      usage='to see your current name\n'
+                            '$name [new_name] to change names')
+    async def spreadsheet(self, ctx, *, name=None):
+        await ctx.send(self.cache.sh.url)
