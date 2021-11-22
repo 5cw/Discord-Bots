@@ -85,7 +85,6 @@ class General(CurrencyCog):
         await self.cache.push_cache()
 
     @commands.command(name='spreadsheet', help='sends the spreadsheet url',
-                      usage='to see your current name\n'
-                            '$name [new_name] to change names')
-    async def spreadsheet(self, ctx, *, name=None):
+                      usage='to get the spreadsheet url')
+    async def spreadsheet(self, ctx):
         await ctx.send(self.cache.sh.url)
