@@ -84,7 +84,7 @@ class General(CurrencyCog):
         await ctx.send(f"Your name was was set to {name}")
         await self.cache.push_cache()
 
-    @commands.command(name='spreadsheet', help='sends the spreadsheet url',
+    @commands.command(name='spreadsheet', help='sends the spreadsheet url in the channel',
                       usage='to get the spreadsheet url')
     async def spreadsheet(self, ctx):
         await ctx.send(self.cache.sh.url)

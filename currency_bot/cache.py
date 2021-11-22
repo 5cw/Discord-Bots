@@ -1,5 +1,5 @@
 from errors import UnknownAPIError, UserBannedError
-from constants import JSON_CREDS, SCOPES, SPREADSHEET_ID
+from constants import JSON_CREDS, SCOPES, SPREADSHEET_ID, BALANCE_SHEET_NAME, BTS_SHEET_NAME
 import gspread
 import dotenv
 from decimal import *
@@ -25,7 +25,7 @@ class Cache:
 
     async def fetch_cache(self):
         batch_get = (await self.rate_limit_retry(self.sh.values_batch_get,
-                                                 ["Balances!A:B", "bts!A:A", "bts!B:B"],
+                                                 [f"{BALANCE_SHEET_NAME}!A:B", f"{BTS_SHEET_NAME}!A:A", f"{BTS_SHEET_NAME}!B:B"],
                                                  {"majorDimension": "COLUMNS"}))["valueRanges"]
         ids = batch_get[1].get('values') or [[]]
         self.ids = [int(id) for id in ids[0]]
@@ -44,18 +44,18 @@ class Cache:
         banned = [str(id) for id in self.banned]
         if len(ids) > 0:
             data.append({
-                'range': f"Balances!A1:B{len(ids)}",
+                'range': f"{BALANCE_SHEET_NAME}!A1:B{len(ids)}",
                 "majorDimension": "COLUMNS",
                 "values": [names, balances]
             })
             data.append({
-                'range': f"bts!A1:A{len(ids)}",
+                'range': f"{BTS_SHEET_NAME}!A1:A{len(ids)}",
                 "majorDimension": "COLUMNS",
                 "values": [ids]
             })
         if len(banned) > 0:
             data.append({
-                'range': f"bts!B1:B{len(banned)}",
+                'range': f"{BTS_SHEET_NAME}!B1:B{len(banned)}",
                 "majorDimension": "COLUMNS",
                 "values": [banned]
             })
@@ -69,11 +69,11 @@ class Cache:
         await self.rate_limit_retry(self.sh.values_batch_update, params, body)
         if ban:
             await self.rate_limit_retry(self.sh.values_batch_clear,
-                                        body={"ranges": [f"Balances!A{len(ids) + 1}:B{len(ids) + 1}",
-                                                         f"bts!A{len(ids) + 1}:A{len(ids) + 1}"]})
+                                        body={"ranges": [f"{BALANCE_SHEET_NAME}!A{len(ids) + 1}:B{len(ids) + 1}",
+                                                         f"{BTS_SHEET_NAME}!A{len(ids) + 1}:A{len(ids) + 1}"]})
         elif unban:
             await self.rate_limit_retry(self.sh.values_batch_clear,
-                                        body={"ranges": [f"bts!B{len(banned) + 1}:B{len(banned) + 1}"]})
+                                        body={"ranges": [f"{BTS_SHEET_NAME}!B{len(banned) + 1}:B{len(banned) + 1}"]})
         self.unlock()
 
     async def rate_limit_retry(self, f, *args, **kwargs):

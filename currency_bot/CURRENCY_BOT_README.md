@@ -16,6 +16,8 @@ CURRENCY_BOT_TOKEN=Discord Bot Token
 CURRENCY_NAME=My Currency Name
 MAX_DIGITS=100 or whatever number you want
 SPREADSHEET_ID=Google Sheet ID
+BALANCES_SHEET_NAME=Name of the public balances sheet in the spreadsheet
+BTS_SHEET_NAME=Name of the hidden information sheet in the spreadsheet
 either
 JSON_FILE=Google_Sheets_API_Creds_Filename.json (in same folder as python files)
 or
@@ -30,4 +32,4 @@ Some of this information is sensitive, so be careful where you put a .env file.
 
 You will need to enable the [Google Sheets API.](https://developers.google.com/workspace/guides/create-project)
 
-You'll need to make a spreadsheet with two sheets, one named "Balances" and the other named "bts" (hide the second one.)
+You'll need to make a spreadsheet with two sheets, one public, one hidden.
