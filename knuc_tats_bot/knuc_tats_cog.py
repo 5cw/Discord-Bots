@@ -1,8 +1,9 @@
-from constants import TIME_DICT, THOUSAND_YEARS_IN_SECS, MAX_HAND_SETS
+from constants import TIME_DICT, THOUSAND_YEARS_IN_SECS, MAX_HAND_SETS, BANNED_WORDS, PREFIXES
 from discord.ext import commands
 import discord
 import re
 from time import time
+import grapheme
 
 
 class KnucTatsCog(commands.Cog):
@@ -118,3 +119,31 @@ class KnucTatsCog(commands.Cog):
     @classmethod
     def disable(cls, guild_id, channel_id, length):
         cls.server_disabled[guild_id][channel_id] = length
+
+    def format_knuc_tats(self, message, string=None):
+        if message.author.bot or message.guild is None:
+            return
+        if string is None:
+            string = message.content
+        guild_id = message.guild.id
+        if len(string) < 1:
+            print(f"empty message with id {message.id}")
+            return
+        if string[0] in PREFIXES:
+            return
+        if self.time_left(message.guild.id, message.guild.id) is not None or \
+                self.time_left(message.guild.id, message.channel.id) is not None:
+            return
+        wws = re.sub(r'\s', '', string)
+        for word in BANNED_WORDS:
+            if word in wws:
+                return
+        length = grapheme.length(wws)
+        if length > 0 and length % 8 == 0 and length // 8 <= self.get_server_max_hands(guild_id):
+            tat = ""
+            for i in range(0, length, 8):
+                tat += f"{grapheme.slice(wws, i, i + 4)} {grapheme.slice(wws, i + 4, i + 8)}\n".upper()
+            tat = tat[:-1]
+            self.set_recent(message, tat)
+            return tat
+        return None
