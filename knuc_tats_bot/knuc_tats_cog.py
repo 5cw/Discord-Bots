@@ -1,4 +1,9 @@
-from constants import TIME_DICT, THOUSAND_YEARS_IN_SECS, MAX_HAND_SETS, BANNED_WORDS, PREFIXES
+import json
+
+import github3
+
+from constants import TIME_DICT, THOUSAND_YEARS_IN_SECS, MAX_HAND_SETS, BANNED_WORDS, PREFIXES, \
+    GITHUB_GISTS_TOKEN, GITHUB_USERNAME, GITHUB_PASSWORD
 from discord.ext import commands
 import discord
 import re
@@ -10,7 +15,17 @@ class KnucTatsCog(commands.Cog):
     server_max_hands = {}
     server_recent_tat = {}
     server_disabled = {}
-
+    gist = None
+    if GITHUB_GISTS_TOKEN:
+        gh = github3.login(token=GITHUB_GISTS_TOKEN)
+    else:
+        gh = github3.login(username=GITHUB_USERNAME, password=GITHUB_PASSWORD)
+    for gist in gh.gists():
+        if 'tweet-bin.json' in gist.files.keys():
+            gist = gist
+            break
+    else:
+        raise FileNotFoundError
     def __init__(self, bot):
         self.bot = bot
 
@@ -91,6 +106,7 @@ class KnucTatsCog(commands.Cog):
         if message.guild.id not in cls.server_recent_tat.keys():
             cls.server_recent_tat[message.guild.id] = {}
         cls.server_recent_tat[message.guild.id][message.channel.id] = tats
+        cls.save()
 
     @classmethod
     def get_recent(cls, ctx):
@@ -108,6 +124,7 @@ class KnucTatsCog(commands.Cog):
     @classmethod
     def set_server_max_hands(cls, guild_id, amt):
         cls.server_max_hands[guild_id] = amt
+        cls.save()
 
     @classmethod
     def enable(cls, guild_id, channel_id):
@@ -115,10 +132,37 @@ class KnucTatsCog(commands.Cog):
             cls.server_disabled[guild_id].clear()
         else:
             del cls.server_disabled[guild_id][channel_id]
+        cls.save()
 
     @classmethod
     def disable(cls, guild_id, channel_id, length):
         cls.server_disabled[guild_id][channel_id] = length
+        cls.save()
+
+    @classmethod
+    def fetch(cls):
+        properties = cls.gist.files.get('properties.json')
+        if properties:
+            try:
+                data = json.loads(properties.content())
+                cls.server_max_hands = data.get('server_max_hands') or {}
+                cls.server_recent_tat = data.get('server_recent_tat') or {}
+                cls.server_disabled = data.get('server_disabled') or {}
+            except json.JSONDecodeError:
+                print("malformed properties.json")
+        return cls.gist.files['tweet-bin.json'].content()
+
+    @classmethod
+    def save(cls, tweets=None):
+        properties = json.dumps({
+            'server_max_hands': cls.server_max_hands,
+            'server_recent_tat': cls.server_recent_tat,
+            'server_disabled': cls.server_disabled
+        }, indent=2)
+        files = {'properties.json': {'content': properties}}
+        if tweets:
+            files['tweet-bin.json'] = {'content': tweets}
+        cls.gist.edit(files=files)
 
     def format_knuc_tats(self, message, string=None):
         if message.author.bot or message.guild is None:

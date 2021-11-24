@@ -1,12 +1,12 @@
 import datetime
-import github3
 from discord.ext import commands, tasks
 from knuc_tats_cog import KnucTatsCog
 from constants import KNUC_TATS_LOGIN_USERS, TWT_BEARER_TOKEN, TWT_API_KEY, TWT_API_SECRET, TWT_ACCESS_TOKEN, \
-    TWT_ACCESS_SECRET, \
-    TWITTER_TIME_FORMAT, GITHUB_USERNAME, GITHUB_PASSWORD, GITHUB_GISTS_TOKEN
+    TWT_ACCESS_SECRET, TWITTER_TIME_FORMAT
 import tweepy
 import json
+
+
 
 
 class Twitter(KnucTatsCog):
@@ -21,7 +21,6 @@ class Twitter(KnucTatsCog):
         self.client = client
         self.tweets = None
         self.latest = None
-        self.gist = None
         self.fetch_tweets()
         self.tweet_update_loop.start()
 
@@ -129,7 +128,7 @@ class Twitter(KnucTatsCog):
                                                 pagination_token=next_token,
                                                 max_results=100)
             data = resp.get('data')
-            if data is None:
+            if data is None and next_token is None:
                 return
             next_token = resp['meta'].get('next_token')
             if next_token is None:
@@ -145,28 +144,17 @@ class Twitter(KnucTatsCog):
 
         self.save_tweets()
 
+
     def fetch_tweets(self):
-        if GITHUB_GISTS_TOKEN:
-            gh = github3.login(token=GITHUB_GISTS_TOKEN)
-        else:
-            gh = github3.login(username=GITHUB_USERNAME, password=GITHUB_PASSWORD)
-        for gist in gh.gists():
-            if 'tweet-bin.json' in gist.files.keys():
-                self.gist = gist
-                break
-        else:
-            raise FileNotFoundError
-        s = self.gist.files['tweet-bin.json'].content()
+        s = self.fetch()
         data = json.loads(s)
         self.tweets = data['tweets']
         self.latest = datetime.datetime.strptime(data['latest'], TWITTER_TIME_FORMAT)
+
 
     def save_tweets(self):
         out = json.dumps({
             'tweets': self.tweets,
             'latest': self.latest.strftime(TWITTER_TIME_FORMAT)
         }, indent=2)
-        self.gist.edit(files={
-            'tweet-bin.json': {
-                'content': out
-            }})
+        self.save(tweets=out)
