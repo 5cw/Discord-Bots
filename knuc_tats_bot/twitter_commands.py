@@ -4,24 +4,18 @@ from knuc_tats_cog import KnucTatsCog
 from constants import KNUC_TATS_LOGIN_USERS, TWT_BEARER_TOKEN, TWT_API_KEY, TWT_API_SECRET, TWT_ACCESS_TOKEN, \
     TWT_ACCESS_SECRET, TWITTER_TIME_FORMAT
 import tweepy
-import json
-
-
 
 
 class Twitter(KnucTatsCog):
 
-    def __init__(self, bot):
-        super(Twitter, self).__init__(bot)
+    def __init__(self, bot, cache):
+        super(Twitter, self).__init__(bot, cache)
         client = tweepy.Client(TWT_BEARER_TOKEN, TWT_API_KEY, TWT_API_SECRET, TWT_ACCESS_TOKEN, TWT_ACCESS_SECRET,
                                wait_on_rate_limit=True, return_type=dict)
         user = client.get_user(id=TWT_ACCESS_TOKEN.split('-')[0])
         self.USERNAME = user['data']['username']
         self.ID = user['data']['id']
         self.client = client
-        self.tweets = None
-        self.latest = None
-        self.fetch_tweets()
         self.tweet_update_loop.start()
 
     @commands.command(name="tweet", help='People with the knuc tats login use to tweet most recent tat',
@@ -32,8 +26,7 @@ class Twitter(KnucTatsCog):
         args = list(args)
         if ctx.author.id not in KNUC_TATS_LOGIN_USERS:
             return
-        to_tweet = self.get_recent(ctx)
-
+        to_tweet = self.cache.get_recent(ctx)
 
         try:
             args.remove("-s")
@@ -59,7 +52,6 @@ class Twitter(KnucTatsCog):
             await ctx.send("Too many characters to tweet.")
             return
 
-
         if dupes:
             await self.check_tweets(ctx, to_tweet)
 
@@ -72,7 +64,8 @@ class Twitter(KnucTatsCog):
         if confirm and confirm.lower()[0] == 'y':
             try:
                 response = self.client.create_tweet(text=to_tweet)
-                await ctx.send(f"Tweet successful!\nhttps://twitter.com/{self.USERNAME}/status/{response['data']['id']}")
+                await ctx.send(
+                    f"Tweet successful!\nhttps://twitter.com/{self.USERNAME}/status/{response['data']['id']}")
             except tweepy.TweepyException as e:
                 print(e)
                 await ctx.send(f"Tweet failed. Error code: {e}")
@@ -82,7 +75,7 @@ class Twitter(KnucTatsCog):
     @commands.command(name="check", help='Use to see if a knuc tat was posted on the twitter.',
                       usage='to send a list of tweets containing the most recent tat in the server.')
     async def check(self, ctx, *args):
-        to_check = self.get_recent(ctx)
+        to_check = self.cache.get_recent(ctx)
         if args:
             potential = self.format_knuc_tats(ctx.message, "".join(args))
             if potential is not None:
@@ -99,7 +92,7 @@ class Twitter(KnucTatsCog):
     def did_tweet(self, tats):
         self.update_tweets()
         out = []
-        for id, tweet in self.tweets.items():
+        for id, tweet in self.cache.tweets.items():
             if tats in tweet['text']:
                 out.append(f"https://twitter.com/{self.USERNAME}/status/{id}")
         return out
@@ -120,7 +113,7 @@ class Twitter(KnucTatsCog):
     def update_tweets(self):
         next_token = None
         more = True
-        latest_plus = (self.latest + datetime.timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        latest_plus = (self.cache.latest + datetime.timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
         while more:
             resp = self.client.get_users_tweets(self.ID,
                                                 start_time=latest_plus,
@@ -135,26 +128,11 @@ class Twitter(KnucTatsCog):
                 more = False
             for tweet in data:
                 dt = datetime.datetime.fromisoformat(tweet['created_at'].replace('Z', "+00:00"))
-                self.tweets[tweet['id']] = {
+                self.cache.tweets[tweet['id']] = {
                     'time': dt.strftime(TWITTER_TIME_FORMAT),
                     'text': tweet['text']
                 }
-                if dt > self.latest:
-                    self.latest = dt
+                if dt > self.cache.latest:
+                    self.cache.latest = dt
 
-        self.save_tweets()
-
-
-    def fetch_tweets(self):
-        s = self.fetch()
-        data = json.loads(s)
-        self.tweets = data['tweets']
-        self.latest = datetime.datetime.strptime(data['latest'], TWITTER_TIME_FORMAT)
-
-
-    def save_tweets(self):
-        out = json.dumps({
-            'tweets': self.tweets,
-            'latest': self.latest.strftime(TWITTER_TIME_FORMAT)
-        }, indent=2)
-        self.save(tweets=out)
+        self.cache.save(tweets=True)

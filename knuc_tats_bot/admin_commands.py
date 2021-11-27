@@ -11,13 +11,13 @@ class Admin(KnucTatsCog):
     @commands.has_permissions(manage_guild=True)
     async def max(self, ctx, *args):
         if len(args) == 0:
-            mx = self.get_server_max_hands(ctx.guild.id)
+            mx = self.cache.get_server_max_hands(ctx.guild.id)
             await ctx.send(f"Maximum sets of hands is currently {mx}.{self.looks_like(mx)}")
             return
         try:
             amount = int(args[0])
             if 0 < amount < 100:
-                self.set_server_max_hands(ctx.guild.id, amount)
+                self.cache.set_server_max_hands(ctx.guild.id, amount)
                 await ctx.send(f"Maximum sets of hands changed to {amount}.{self.looks_like(amount)}")
             else:
                 await ctx.send("invalid number of hands")
@@ -58,8 +58,8 @@ class Admin(KnucTatsCog):
         else:
             ID = ctx.guild.id
 
-        left = self.time_left(ctx.guild.id, ID)
-        s_left = self.time_left(ctx.guild.id, ctx.guild.id)
+        left = self.cache.time_left(ctx.guild.id, ID)
+        s_left = self.cache.time_left(ctx.guild.id, ctx.guild.id)
 
         if check and stop:
             await ctx.send("Cannot both check and stop mute.")
@@ -88,7 +88,7 @@ class Admin(KnucTatsCog):
             return
 
         if stop:
-            self.enable(ctx.guild.id, ctx.channel.id if not server else None)
+            self.cache.enable(ctx.guild.id, ctx.channel.id if not server else None)
             await ctx.send(f"{entity} has been unmuted.")
             return
 
@@ -97,7 +97,7 @@ class Admin(KnucTatsCog):
         else:
             until = -1
 
-        self.disable(ctx.guild.id, ID, until)
+        self.cache.disable(ctx.guild.id, ID, until)
 
         if amount < 0:
             await ctx.send(f"{entity} has been muted indefinitely. %mute -stop to unmute.")

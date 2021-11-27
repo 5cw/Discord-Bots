@@ -1,4 +1,6 @@
 import os
+
+import github3
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -42,3 +44,15 @@ TIME_DICT['y'] = 365 * TIME_DICT['d']
 THOUSAND_YEARS_IN_SECS = TIME_DICT["y"] * 1000
 
 TWITTER_TIME_FORMAT = "%a %b %d %H:%M:%S %z %Y"
+
+GIST = None
+if GITHUB_GISTS_TOKEN:
+    gh = github3.login(token=GITHUB_GISTS_TOKEN)
+else:
+    gh = github3.login(username=GITHUB_USERNAME, password=GITHUB_PASSWORD)
+for gist in gh.gists():
+    if 'tweet-bin.json' in gist.files.keys():
+        GIST = gist
+        break
+else:
+    raise FileNotFoundError
