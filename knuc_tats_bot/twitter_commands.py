@@ -52,11 +52,14 @@ class Twitter(KnucTatsCog):
             await ctx.send("Too many characters to tweet.")
             return
 
+
         if dupes:
-            await self.check_tweets(ctx, to_tweet)
+            chk = await self.check_tweets(ctx, to_tweet)
+
+        cond_display = "" if dupes else f"\n>>> {to_tweet}"
 
         if not skip:
-            await ctx.send(f"You want to tweet this? (y/n)\n>>> {to_tweet}")
+            await ctx.send("You want to tweet this? (y/n)" + cond_display)
             confirm = (await self.bot.wait_for('message', check=lambda
                 message: message.author.id == ctx.author.id and message.channel.id == ctx.channel.id)).content
         else:
