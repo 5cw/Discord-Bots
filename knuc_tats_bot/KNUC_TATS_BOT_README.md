@@ -26,13 +26,17 @@ GITHUB_USERNAME=Github Username
 GITHUB_PASSWORD=Github Password
 
 optional
-BANNED_WORDS=comma,separated,list,of,banned,words
+BANNED_WORDS=comma,separated,list,of,banned,words #see obfuscate.py if you want it to not look ugly
 MAX_HAND_SETS=default maximum number of sets of hands (can be modified per-server, defaults to 2.)
 ```
+[obfuscate.py](obfuscate.py)
+
 Environment variables can go in a .env file, or in the environment variables section of a hosting service (like [heroku](https://heroku.com).)
 
 Some of this information is sensitive, so be careful where you put your .env file.
 
 You'll need a [Twitter developer account.](https://dev.to/sumedhpatkar/beginners-guide-how-to-apply-for-a-twitter-developer-account-1kh7)
 
-You'll need to create a github gist with a file named tweet-bin.json
+You'll need to create a github gist with a file named tweet-bin.json. 
+(see [convert_twitter_archive.py](convert_twitter_archive.py) and 
+[How to download your twitter archive](https://help.twitter.com/en/managing-your-account/how-to-download-your-twitter-archive))

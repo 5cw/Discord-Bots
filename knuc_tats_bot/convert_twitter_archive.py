@@ -4,12 +4,8 @@ remove window.YTD.tweet.part0 = at beginning.
 """
 
 import json
-import os
 from dotenv import load_dotenv
 import datetime
-
-from pbwrap import Pastebin
-
 from constants import TWITTER_TIME_FORMAT
 
 load_dotenv()

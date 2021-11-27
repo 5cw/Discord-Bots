@@ -1,9 +1,9 @@
 from constants import BANNED_WORDS, PREFIXES, THOUSAND_YEARS_IN_SECS, TIME_DICT
 from discord.ext import commands
 import re
-from time import perf_counter
 import grapheme
 from cache import Cache
+from obfuscate import obfuscate
 
 
 class KnucTatsCog(commands.Cog):
@@ -77,15 +77,16 @@ class KnucTatsCog(commands.Cog):
         if self.cache.time_left(message.guild.id, message.guild.id) is not None or \
                 self.cache.time_left(message.guild.id, message.channel.id) is not None:
             return
-        wws = re.sub(r'\s', '', string)
+        wws = re.sub(r'\s', '', string).upper()
+        obf_wws = obfuscate(wws)
         for word in BANNED_WORDS:
-            if word in wws:
+            if word in obf_wws:
                 return None
         length = grapheme.length(wws)
         if length > 0 and length % 8 == 0 and length // 8 <= self.cache.get_server_max_hands(guild_id):
             tat = ""
             for i in range(0, length, 8):
-                tat += f"{grapheme.slice(wws, i, i + 4)} {grapheme.slice(wws, i + 4, i + 8)}\n".upper()
+                tat += f"{grapheme.slice(wws, i, i + 4)} {grapheme.slice(wws, i + 4, i + 8)}\n"
             tat = tat[:-1]
             self.cache.set_recent(message, tat)
             return tat
