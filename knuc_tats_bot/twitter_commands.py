@@ -40,6 +40,14 @@ class Twitter(KnucTatsCog):
         except ValueError:
             dupes = False
 
+        try:
+            args.remove("-h")
+            hist = True
+        except ValueError:
+            hist = False
+
+
+
         if args:
             potential = self.format_knuc_tats(ctx.message, "".join(args))
             if potential is not None:
@@ -52,9 +60,8 @@ class Twitter(KnucTatsCog):
             await ctx.send("Too many characters to tweet.")
             return
 
-
         if dupes:
-            chk = await self.check_tweets(ctx, to_tweet)
+            await self.check_tweets(ctx, to_tweet)
 
         cond_display = "" if dupes else f"\n>>> {to_tweet}"
 

@@ -52,16 +52,23 @@ class Cache:
         channel_id = str(message.channel.id)
         if message.guild.id not in self.server_recent_tat.keys():
             self.server_recent_tat[guild_id] = {}
-        self.server_recent_tat[guild_id][channel_id] = tats
+        if channel_id not in self.server_recent_tat.keys():
+            self.server_recent_tat[guild_id][channel_id] = []
+        self.server_recent_tat[guild_id][channel_id].append(tats)
+
 
         self.save(properties=True)
 
-    def get_recent(self, ctx):
+    def get_recent(self, ctx, num=1):
         guild_id = str(ctx.guild.id)
         channel_id = str(ctx.channel.id)
         if guild_id not in self.server_recent_tat.keys():
             self.server_recent_tat[guild_id] = {}
-        return self.server_recent_tat[guild_id].get(channel_id)
+        if channel_id not in self.server_recent_tat.keys():
+            self.server_recent_tat[guild_id][channel_id] = []
+        if len(self.server_recent_tat[guild_id][channel_id]) >= num:
+            return self.server_recent_tat[guild_id][channel_id][:num]
+        return None
 
     def get_server_max_hands(self, guild_id):
         guild_id = str(guild_id)
