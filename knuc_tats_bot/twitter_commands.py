@@ -22,28 +22,30 @@ class Twitter(KnucTatsCog):
                       usage='to tweet most recent tat in channel, -s to skip confirmation, -d to check for duplicates.'
                             'Only users known to have twitter login may use. '
                             'User IDs are hardcoded into bot, check with lexi if you want your discord ID added.')
-    async def tweet(self, ctx, *, raw):
-        args = raw.split()
+    async def tweet(self, ctx, *, raw=None):
         if ctx.author.id not in KNUC_TATS_LOGIN_USERS:
             return
         to_tweet = self.cache.get_recent(ctx)
+        skip = dupes = False
+        if raw is not None:
+            args = raw.split()
 
-        try:
-            args.remove("-s")
-            skip = True
-        except ValueError:
-            skip = False
+            try:
+                args.remove("-s")
+                skip = True
+            except ValueError:
+                skip = False
 
-        try:
-            args.remove("-d")
-            dupes = True
-        except ValueError:
-            dupes = False
+            try:
+                args.remove("-d")
+                dupes = True
+            except ValueError:
+                dupes = False
 
-        if args:
-            potential = self.format_knuc_tats(ctx.message, "".join(args))
-            if potential is not None:
-                to_tweet = potential
+            if args:
+                potential = self.format_knuc_tats(ctx.message, "".join(args))
+                if potential is not None:
+                    to_tweet = potential
 
         if to_tweet is None:
             await ctx.send("No knuc tats have been sent in this channel since the bot was last restarted.")
@@ -52,9 +54,8 @@ class Twitter(KnucTatsCog):
             await ctx.send("Too many characters to tweet.")
             return
 
-
         if dupes:
-            chk = await self.check_tweets(ctx, to_tweet)
+            await self.check_tweets(ctx, to_tweet)
 
         cond_display = "" if dupes else f"\n>>> {to_tweet}"
 
@@ -77,9 +78,9 @@ class Twitter(KnucTatsCog):
 
     @commands.command(name="check", help='Use to see if a knuc tat was posted on the twitter.',
                       usage='to send a list of tweets containing the most recent tat in the server.')
-    async def check(self, ctx, *, raw):
+    async def check(self, ctx, *, raw=None):
         to_check = self.cache.get_recent(ctx)
-        if raw:
+        if raw is not None:
             potential = self.format_knuc_tats(ctx.message, raw)
             if potential is not None:
                 to_check = potential
