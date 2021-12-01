@@ -1,9 +1,12 @@
 import asyncio
 import json
 import discord
-from constants import MAX_HAND_SETS, GIST, TWITTER_TIME_FORMAT
+import grapheme
+
+from constants import MAX_HAND_SETS, GIST, TWITTER_TIME_FORMAT, MESSAGE_LIMIT, HIST_MAX
 from time import time
 import datetime
+import re
 
 
 class Cache:
@@ -14,6 +17,7 @@ class Cache:
         self.server_disabled = None
         self.tweets = None
         self.latest = None
+        self.bot_id = None
         properties = GIST.files.get('properties.json')
         if properties:
             try:
@@ -47,28 +51,42 @@ class Cache:
         else:
             return -1
 
-    def set_recent(self, message: discord.Message, tats: str):
+    def push_recent(self, message: discord.Message, tats: str):
         guild_id = str(message.guild.id)
         channel_id = str(message.channel.id)
-        if message.guild.id not in self.server_recent_tat.keys():
+        if guild_id not in self.server_recent_tat.keys():
             self.server_recent_tat[guild_id] = {}
-        if channel_id not in self.server_recent_tat.keys():
+        if channel_id not in self.server_recent_tat[guild_id].keys() \
+                or type(self.server_recent_tat[guild_id][channel_id]) != list:
             self.server_recent_tat[guild_id][channel_id] = []
-        self.server_recent_tat[guild_id][channel_id].append(tats)
-
-
+        self.server_recent_tat[guild_id][channel_id].insert(0, tats)
+        if len(self.server_recent_tat[guild_id][channel_id]) > HIST_MAX:
+            self.server_recent_tat[guild_id][channel_id].pop()
         self.save(properties=True)
 
-    def get_recent(self, ctx, num=1):
+    async def get_recent(self, ctx, bot, num=1):
         guild_id = str(ctx.guild.id)
         channel_id = str(ctx.channel.id)
         if guild_id not in self.server_recent_tat.keys():
             self.server_recent_tat[guild_id] = {}
-        if channel_id not in self.server_recent_tat.keys():
+        if channel_id not in self.server_recent_tat[guild_id].keys():
             self.server_recent_tat[guild_id][channel_id] = []
         if len(self.server_recent_tat[guild_id][channel_id]) >= num:
             return self.server_recent_tat[guild_id][channel_id][:num]
-        return None
+        else:
+            count = 0
+            messages = await ctx.channel.history(limit=MESSAGE_LIMIT).flatten()
+            initial_length = len(self.server_recent_tat[guild_id][channel_id])
+            for msg in messages:
+                if msg.author.id == bot.id and self.match_tat(msg.content):
+                    if count >= initial_length:
+                        self.server_recent_tat[guild_id][channel_id].append(msg.content)
+                    else:
+                        if msg.content in self.server_recent_tat[guild_id][channel_id]:
+                            count += 1
+                if len(self.server_recent_tat[guild_id][channel_id]) >= num:
+                    return self.server_recent_tat[guild_id][channel_id][:num]
+            return self.server_recent_tat[guild_id][channel_id]
 
     def get_server_max_hands(self, guild_id):
         guild_id = str(guild_id)
@@ -101,7 +119,9 @@ class Cache:
     def save(self, tweets=False, properties=False):
         asyncio.create_task(self.save_help(tweets=tweets, properties=properties))
 
+
     async def save_help(self, tweets=False, properties=False):
+
         files = {}
         if tweets:
             tweets_string = json.dumps({
@@ -116,4 +136,10 @@ class Cache:
                 'server_disabled': self.server_disabled
             }, indent=2)
             files['properties.json'] = {'content': properties_string}
-        GIST.edit(files=files)
+        print(GIST.edit(files=files))
+
+    def match_tat(self, string):
+        tat = True
+        for line in string.split('\n'):
+            tat &= (grapheme.slice(line, 4, 5) == ' ' and grapheme.length(line) == 9)
+        return tat

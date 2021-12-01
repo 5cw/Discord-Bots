@@ -89,6 +89,6 @@ class KnucTatsCog(commands.Cog):
                 tat += f"{grapheme.slice(wws, i, i + 4)} {grapheme.slice(wws, i + 4, i + 8)}\n"
             tat = tat[:-1]
 
-            self.cache.set_recent(message, tat)
+            self.cache.push_recent(message, tat)
             return tat
         return None

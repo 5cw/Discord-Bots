@@ -29,12 +29,35 @@ GITHUB_GISTS_TOKEN = os.environ.get("GITHUB_GISTS_TOKEN")
 
 max_string = os.environ.get('MAX_HAND_SETS')
 
+MESSAGE_LIMIT = os.environ.get("MESSAGE_LIMIT")
+
+if MESSAGE_LIMIT is None:
+    MESSAGE_LIMIT = 200
+else:
+    MESSAGE_LIMIT = int(MESSAGE_LIMIT)
+
 if max_string is None:
     MAX_HAND_SETS = 2
 else:
     MAX_HAND_SETS = int(max_string)
 
+GIST = None
+if GITHUB_GISTS_TOKEN:
+    gh = github3.login(token=GITHUB_GISTS_TOKEN)
+else:
+    gh = github3.login(username=GITHUB_USERNAME, password=GITHUB_PASSWORD)
+for gist in gh.gists():
+    if 'tweet-bin.json' in gist.files.keys():
+        GIST = gist
+        break
+else:
+    raise FileNotFoundError
+
+
+
 PREFIXES = "$!%"
+HIST_NUM = 5
+HIST_MAX = 20
 
 TIME_DICT = {
     's': 1,
@@ -49,14 +72,4 @@ THOUSAND_YEARS_IN_SECS = TIME_DICT["y"] * 1000
 
 TWITTER_TIME_FORMAT = "%a %b %d %H:%M:%S %z %Y"
 
-GIST = None
-if GITHUB_GISTS_TOKEN:
-    gh = github3.login(token=GITHUB_GISTS_TOKEN)
-else:
-    gh = github3.login(username=GITHUB_USERNAME, password=GITHUB_PASSWORD)
-for gist in gh.gists():
-    if 'tweet-bin.json' in gist.files.keys():
-        GIST = gist
-        break
-else:
-    raise FileNotFoundError
+
