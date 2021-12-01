@@ -96,8 +96,11 @@ class Twitter(KnucTatsCog):
 
     @commands.command(name="check", help='Use to see if a knuc tat was posted on the twitter.',
                       usage='to send a list of tweets containing the most recent tat in the server.')
-    async def check(self, ctx, *, raw):
-        to_check = await self.parse_which_tats(ctx, raw.split())
+    async def check(self, ctx, *, raw=None):
+        args = []
+        if raw is not None:
+            args = raw.split()
+        to_check = await self.parse_which_tats(ctx, args)
         if to_check == None:
             return
         if to_check == []:
