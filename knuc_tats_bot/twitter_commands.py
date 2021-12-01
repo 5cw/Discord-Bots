@@ -20,10 +20,12 @@ class Twitter(KnucTatsCog):
         self.tweet_update_loop.start()
 
     @commands.command(name="tweet", help='People with the knuc tats login use to tweet most recent tat',
-                      usage='to tweet most recent tat in channel, -s to skip confirmation, '
-                            '-d to print check for duplicates, -dd to drop duplicates, '
-                            '-h [distance] to choose the distanceth knuc tats backward, '
-                            '-ha (distance) to pick from a table of recent tats.'
+                      usage='(knuc tats) to tweet text in command, leave blank to tweet most recent tat in channel, \n'
+                            '-s to skip confirmation, \n'
+                            '-d to print check for duplicates, \n'
+                            '-dd to drop duplicates, \n'
+                            '-h [distance] to choose the distanceth knuc tats backward, \n'
+                            f'-ha (distance) to pick from a table of recent tats. (defaults to {HIST_NUM})\n'
                             'Only users known to have twitter login may use. '
                             'User IDs are hardcoded into bot, check with lexi if you want your discord ID added.')
     async def tweet(self, ctx, *, raw=None):
@@ -95,7 +97,10 @@ class Twitter(KnucTatsCog):
             await ctx.send("Tweet cancelled.")
 
     @commands.command(name="check", help='Use to see if a knuc tat was posted on the twitter.',
-                      usage='to send a list of tweets containing the most recent tat in the server.')
+                      usage='(knuc tats) to send a list of tweets containing the tats, '
+                            'leave blank to check the most recent tat in the channel.\n'
+                            '-h [distance] to choose the distanceth knuc tats backward, \n'
+                            f'-ha (distance) to pick from a table of recent tats. (defaults to {HIST_NUM})')
     async def check(self, ctx, *, raw=None):
         args = []
         if raw is not None:
@@ -189,7 +194,7 @@ class Twitter(KnucTatsCog):
             h_string = ''
             for i, tats in enumerate(possible):
                 h_string += f'> {i + 1:2}. '
-                h_string += '\n>     '.join(tats.split('\n')) + '\n'
+                h_string += '\n>      '.join(tats.split('\n')) + '\n'
             h_string = h_string[:-1]
             await ctx.send(h_string)
             await ctx.send('Send comma-separated list of numbered tats to choose. '
