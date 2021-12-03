@@ -86,13 +86,14 @@ class Twitter(KnucTatsCog):
             confirm = 'y'
 
         if confirm and confirm.lower()[0] == 'y':
-            try:
-                response = self.client.create_tweet(text=to_tweet)
-                await ctx.send(
-                    f"Tweet successful!\nhttps://twitter.com/{self.USERNAME}/status/{response['data']['id']}")
-            except tweepy.TweepyException as e:
-                print(e)
-                await ctx.send(f"Tweet failed. Error code: {e}")
+            for tw in to_tweet:
+                try:
+                    response = self.client.create_tweet(text=tw)
+                    await ctx.send(
+                        f"Tweet successful!\nhttps://twitter.com/{self.USERNAME}/status/{response['data']['id']}")
+                except tweepy.TweepyException as e:
+                    print(e)
+                    await ctx.send(f"Tweet failed. Error code: {e}")
         else:
             await ctx.send("Tweet cancelled.")
 
