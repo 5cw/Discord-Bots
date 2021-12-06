@@ -215,7 +215,7 @@ class Twitter(KnucTatsCog):
                         await ctx.send('Invalid selection.')
                         return None
         else:
-            if possible != []:
+            if possible:
                 recents.append(possible[-1])
         return recents
 

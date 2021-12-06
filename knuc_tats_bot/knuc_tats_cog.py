@@ -70,6 +70,7 @@ class KnucTatsCog(commands.Cog):
             string = message.content
         guild_id = message.guild.id
         if len(string) < 1:
+            # TODO: sometimes triggers on bot message, which should be caught above. figure out and fix.
             print(f"empty message with id {message.id}")
             return None
         if string[0] in PREFIXES:
