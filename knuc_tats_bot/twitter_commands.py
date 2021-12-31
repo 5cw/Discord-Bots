@@ -182,11 +182,17 @@ class Twitter(KnucTatsCog):
             await ctx.send(args)
             return None
         cmd_tat = self.format_knuc_tats(ctx.message, ''.join(args))
+        if ctx.message.reference is not None:
+            reply_tat = self.format_knuc_tats(ctx.message.reference)
+        else:
+            reply_tat = None
         possible = None
         if hist > 0:
             possible = await self.cache.get_recent(ctx, self.bot.user, hist)
         elif cmd_tat is not None:
             recents.append(cmd_tat)
+        elif reply_tat is not None:
+            recents.append(reply_tat)
         else:
             await ctx.send("Not valid knuc tats.")
             return None
