@@ -183,7 +183,10 @@ class Twitter(KnucTatsCog):
             return None
         cmd_tat = self.format_knuc_tats(ctx.message, ''.join(args))
         if ctx.message.reference is not None:
-            reply_tat = self.format_knuc_tats(ctx.message.reference)
+            reply = ctx.message.reference.cached_message
+            if reply is None:
+                reply = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+            reply_tat = self.format_knuc_tats(reply)
         else:
             reply_tat = None
         possible = None
