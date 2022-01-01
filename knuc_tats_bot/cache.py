@@ -136,7 +136,7 @@ class Cache:
                 'server_disabled': self.server_disabled
             }, indent=2)
             files['properties.json'] = {'content': properties_string}
-        print(GIST.edit(files=files))
+        GIST.edit(files=files)
 
     def match_tat(self, string):
         tat = True
