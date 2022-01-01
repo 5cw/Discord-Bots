@@ -81,6 +81,8 @@ class KnucTatsCog(commands.Cog):
         wws = re.sub(r'\s', '', string).upper()
         obf_wws = obfuscate(wws)
         for word in BANNED_WORDS:
+            if "%27" in word:
+                print(obf_wws)
             if word in obf_wws:
                 return None
         length = grapheme.length(wws)
