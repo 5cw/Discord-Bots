@@ -66,7 +66,8 @@ class KnucTatsCog(commands.Cog):
     def format_knuc_tats(self, message, string=None):
         if message.author.bot or message.guild is None:
             return None
-        if string is None:
+        strict = string is None
+        if strict:
             string = message.content
         guild_id = message.guild.id
         if len(string) < 1:
@@ -78,18 +79,37 @@ class KnucTatsCog(commands.Cog):
         if self.cache.time_left(message.guild.id, message.guild.id) is not None or \
                 self.cache.time_left(message.guild.id, message.channel.id) is not None:
             return
-        wws = re.sub(r'\s', '', string).upper()
+        split_wws = re.split(r'\s', string)
+        wws = ''.join(split_wws).upper()
         obf_wws = obfuscate(wws)
         for word in BANNED_WORDS:
             if word in obf_wws:
                 return None
+
+        max = self.cache.get_server_max_hands(message.guild.id)
         length = grapheme.length(wws)
-        if length > 0 and length % 8 == 0 and length // 8 <= self.cache.get_server_max_hands(guild_id):
+        valid = length > 0 and length % 8 == 0 and length // 8 <= max
+        if strict and valid:
+            tally = 0
+            for word in split_wws:
+                tally += grapheme.length(word)
+                if tally == 8:
+                    tally = 0
+                    max -= 1
+                elif tally > 8:
+                    valid = False
+                    break
+            if max < 0 or tally != 0:
+                valid = False
+        
+        if valid:
             tat = ""
-            for i in range(0, length, 8):
+            for i in range(0, grapheme.length(wws), 8):
                 tat += f"{grapheme.slice(wws, i, i + 4)} {grapheme.slice(wws, i + 4, i + 8)}\n"
             tat = tat[:-1]
 
             self.cache.push_recent(message, tat)
             return tat
         return None
+
+    
