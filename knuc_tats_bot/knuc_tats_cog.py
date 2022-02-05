@@ -88,8 +88,10 @@ class KnucTatsCog(commands.Cog):
 
         max = self.cache.get_server_max_hands(message.guild.id)
         length = grapheme.length(wws)
-        valid = length > 0 and length % 8 == 0 and length // 8 <= max
+        valid = length > 0 and length % 8 == 0
         if strict and valid:
+            if length // 8 <= max:
+                return None
             tally = 0
             for word in split_wws:
                 tally += grapheme.length(word)
@@ -100,7 +102,7 @@ class KnucTatsCog(commands.Cog):
                     valid = False
                     break
             if max < 0 or tally != 0:
-                valid = False
+                return None
         
         if valid:
             tat = ""
