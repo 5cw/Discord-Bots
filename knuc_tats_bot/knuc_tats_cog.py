@@ -90,8 +90,7 @@ class KnucTatsCog(commands.Cog):
         length = grapheme.length(wws)
         valid = length > 0 and length % 8 == 0
         if strict and valid:
-            if length // 8 <= max:
-                return None
+
             tally = 0
             for word in split_wws:
                 tally += grapheme.length(word)
