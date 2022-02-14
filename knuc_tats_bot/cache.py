@@ -6,7 +6,7 @@ import grapheme
 from constants import MAX_HAND_SETS, GIST, TWITTER_TIME_FORMAT, MESSAGE_LIMIT, HIST_MAX
 from time import time
 import datetime
-import format
+
 
 
 class Cache:
