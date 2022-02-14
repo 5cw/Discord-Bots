@@ -126,8 +126,9 @@ class Twitter(KnucTatsCog):
 
     def did_tweet(self, tats):
         self.update_tweets()
-        out = [f"https://twitter.com/{self.USERNAME}/status/{tweet['id']}" for tweet in self.cache.tweets[tats]]
-        return out
+        if tats not in self.cache.tweets.keys():
+            return []
+        return [f"https://twitter.com/{self.USERNAME}/status/{tweet['id']}" for tweet in self.cache.tweets[tats]]
 
     async def check_tweets(self, ctx, tats, prnt=True, drop=False):
         untweeted = []
