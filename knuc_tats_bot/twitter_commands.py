@@ -186,11 +186,14 @@ class Twitter(KnucTatsCog):
                 more = False
             for tweet in data:
                 dt = datetime.datetime.fromisoformat(tweet['created_at'].replace('Z', "+00:00"))
-                self.cache.tweets[get_clean(tweet['text'])] = {
+                clean = get_clean(tweet['text'])
+                if clean not in self.cache.tweets.keys():
+                    self.cache.tweets[clean] = []
+                self.cache.tweets[clean].append({
                     'id': tweet['id'],
                     'time': dt.strftime(TWITTER_TIME_FORMAT),
                     'raw': tweet['text']
-                }
+                })
                 if dt > self.cache.latest:
                     self.cache.latest = dt
 
