@@ -6,7 +6,7 @@ import grapheme
 from constants import MAX_HAND_SETS, GIST, TWITTER_TIME_FORMAT, MESSAGE_LIMIT, HIST_MAX
 from time import time
 import datetime
-import re
+import format
 
 
 class Cache:
@@ -77,8 +77,13 @@ class Cache:
             count = 0
             messages = await ctx.channel.history(limit=MESSAGE_LIMIT).flatten()
             initial_length = len(self.server_recent_tat[guild_id][channel_id])
+            def match_tat(text):
+                tat = True
+                for line in text.split('\n'):
+                    tat &= (grapheme.slice(line, 4, 5) == ' ' and grapheme.length(line) == 9)
+                return tat
             for msg in messages:
-                if msg.author.id == bot.id and self.match_tat(msg.content):
+                if msg.author.id == bot.id and match_tat(msg.content):
                     if count >= initial_length:
                         self.server_recent_tat[guild_id][channel_id].append(msg.content)
                     else:
@@ -138,8 +143,3 @@ class Cache:
             files['properties.json'] = {'content': properties_string}
         GIST.edit(files=files)
 
-    def match_tat(self, string):
-        tat = True
-        for line in string.split('\n'):
-            tat &= (grapheme.slice(line, 4, 5) == ' ' and grapheme.length(line) == 9)
-        return tat

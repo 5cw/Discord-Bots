@@ -1,4 +1,8 @@
 import datetime
+import html
+import timeit
+
+import grapheme
 from discord.ext import commands, tasks
 from knuc_tats_cog import KnucTatsCog
 from constants import KNUC_TATS_LOGIN_USERS, TWT_BEARER_TOKEN, TWT_API_KEY, TWT_API_SECRET, TWT_ACCESS_TOKEN, \
@@ -112,24 +116,25 @@ class Twitter(KnucTatsCog):
         if to_check == []:
             await ctx.send("No knuc tats to check.")
             return
+
         await self.check_tweets(ctx, to_check)
 
-    @tasks.loop(hours=4)
+
+    @tasks.loop(minutes=5)
     async def tweet_update_loop(self):
         self.update_tweets()
 
     def did_tweet(self, tats):
         self.update_tweets()
-        out = []
-        for id, tweet in self.cache.tweets.items():
-            if tats in tweet['text']:
-                out.append(f"https://twitter.com/{self.USERNAME}/status/{id}")
+        out = [f"https://twitter.com/{self.USERNAME}/status/{tweet['id']}" for tweet in self.cache.tweets[tats]]
         return out
 
     async def check_tweets(self, ctx, tats, prnt=True, drop=False):
         untweeted = []
         for tat in tats:
+
             tweets = self.did_tweet(tat)
+
             if not tweets:
                 if prnt:
                     await ctx.send(f"@{self.USERNAME} has never tweeted \n>>> {tat}")
@@ -146,12 +151,26 @@ class Twitter(KnucTatsCog):
                     await ctx.send("Dropping.")
         return untweeted
 
-
-
     def update_tweets(self):
         next_token = None
         more = True
         latest_plus = (self.cache.latest + datetime.timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+        def get_clean(text):
+            old = text
+            if text[:3] == "RT ":
+                text = text[3:]
+            text = re.sub(r"(?:@|(?:https:\/\/t\.co\/))[^\s]+", "", text)
+            text = re.sub(r" *\n *", "\n", text)
+            text = re.sub(r" +|\t", " ", text)
+            text = re.sub(r"^\s|\s$", "", text)
+            text = html.unescape(text)
+            check = 9
+            while grapheme.length(text) > check:
+                if grapheme.slice(text, check, check + 1) == " ":
+                    text = grapheme.slice(text, None, check) + "\n" + grapheme.slice(text, check + 1, None)
+                check += 10
+            return text
         while more:
             resp = self.client.get_users_tweets(self.ID,
                                                 start_time=latest_plus,
@@ -166,9 +185,10 @@ class Twitter(KnucTatsCog):
                 more = False
             for tweet in data:
                 dt = datetime.datetime.fromisoformat(tweet['created_at'].replace('Z', "+00:00"))
-                self.cache.tweets[tweet['id']] = {
+                self.cache.tweets[get_clean(tweet['text'])] = {
+                    'id': tweet['id'],
                     'time': dt.strftime(TWITTER_TIME_FORMAT),
-                    'text': tweet['text']
+                    'raw': tweet['text']
                 }
                 if dt > self.cache.latest:
                     self.cache.latest = dt
