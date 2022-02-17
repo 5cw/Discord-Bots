@@ -23,6 +23,12 @@ class Twitter(KnucTatsCog):
         self.client = client
         self.tweet_update_loop.start()
 
+    @commands.command(name="dds", help='Alias of %tweet -dd -s',
+                      usage='(knuc tats) to tweet text in command, leave blank to tweet most recent tat in channel,')
+    async def dds(self, ctx, *, raw=None):
+        await self.tweet(ctx, raw="-dd -s " + raw)
+
+
     @commands.command(name="tweet", help='People with the knuc tats login use to tweet most recent tat',
                       usage='(knuc tats) to tweet text in command, leave blank to tweet most recent tat in channel, \n'
                             '-s to skip confirmation, \n'
