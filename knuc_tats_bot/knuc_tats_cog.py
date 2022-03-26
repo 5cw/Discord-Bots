@@ -1,10 +1,9 @@
-from constants import BANNED_WORDS, PREFIXES, THOUSAND_YEARS_IN_SECS, TIME_DICT
+from constants import BANNED_WORDS, PREFIXES, THOUSAND_YEARS_IN_SECS, TIME_DICT, BAD_WORD
 from discord.ext import commands
 import re
 import grapheme
 from cache import Cache
 from obfuscate import obfuscate
-
 
 class KnucTatsCog(commands.Cog):
 
@@ -84,7 +83,7 @@ class KnucTatsCog(commands.Cog):
         obf_wws = obfuscate(wws)
         for word in BANNED_WORDS:
             if word in obf_wws:
-                return None
+                return BAD_WORD
 
         max = self.cache.get_server_max_hands(message.guild.id)
         length = grapheme.length(wws)

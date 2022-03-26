@@ -6,7 +6,7 @@ import grapheme
 from discord.ext import commands, tasks
 from knuc_tats_cog import KnucTatsCog
 from constants import KNUC_TATS_LOGIN_USERS, TWT_BEARER_TOKEN, TWT_API_KEY, TWT_API_SECRET, TWT_ACCESS_TOKEN, \
-    TWT_ACCESS_SECRET, TWITTER_TIME_FORMAT, HIST_NUM, HIST_MAX
+    TWT_ACCESS_SECRET, TWITTER_TIME_FORMAT, HIST_NUM, HIST_MAX, BAD_WORD
 import tweepy
 import re
 
@@ -223,6 +223,10 @@ class Twitter(KnucTatsCog):
         if hist > 0:
             possible = await self.cache.get_recent(ctx, self.bot.user, hist)
         elif cmd_tat is not None:
+            if cmd_tat == BAD_WORD:
+                await ctx.send("Your message was flagged as containing an offensive word.")
+                # TODO: implement override flag
+                return None
             recents.append(cmd_tat)
         elif reply_tat is not None:
             recents.append(reply_tat)
