@@ -32,9 +32,6 @@ CHECK_FLAGS = {
 }
 
 
-
-
-
 def extract_flags(args, flag_types):
     out = {}
 
@@ -161,12 +158,12 @@ class Twitter(KnucTatsCog):
             for tw in to_tweet:
                 if bad_words and tw.is_bad_word:
                     await ctx.send(f"> {tw.text}\nhas been flagged as having offensive words in it, "
-                                   f"if you're sure you wish to tweet this, type \"override\" now.")
+                                   f"if you're sure you wish to tweet this, type \"confirm\" now.")
                     bad_word_confirm = (await self.bot.wait_for('message', check=lambda
                         message: message.author.id == ctx.author.id and message.channel.id == ctx.channel.id)).content
                 else:
-                    bad_word_confirm = "override"
-                if bad_word_confirm.lower() == "override":
+                    bad_word_confirm = "confirm"
+                if bad_word_confirm.lower() == "confirm":
                     try:
                         response = self.client.create_tweet(text=tw.text)
                         await ctx.send(
@@ -176,7 +173,6 @@ class Twitter(KnucTatsCog):
                         print(e)
                         await ctx.send(f"Tweet failed. Error code: {e}")
                         return
-
 
         await ctx.send("Tweet cancelled.")
 
@@ -211,13 +207,11 @@ class Twitter(KnucTatsCog):
     async def check_tweets(self, ctx, tats, prnt=True, drop=False):
         untweeted = []
         for tat in tats:
-            text = tat.text
-            tweets = self.did_tweet(text)
-
+            tweets = self.did_tweet(tat.text)
             if not tweets:
                 if prnt:
-                    await ctx.send(f"@{self.USERNAME} has never tweeted \n>>> {text}")
-                untweeted.append(text)
+                    await ctx.send(f"@{self.USERNAME} has never tweeted \n>>> {tat.text}")
+                untweeted.append(tat)
             elif prnt:
                 plural = "s" if len(tweets) != 1 else ""
                 block = tat.replace('\n', '\n> ')
@@ -280,7 +274,7 @@ class Twitter(KnucTatsCog):
 
     async def drop_bad_words(self, ctx, tats):
         num_bad_words_dropped = 0
-        for i in range(len(tats)-1, -1, -1):
+        for i in range(len(tats) - 1, -1, -1):
             if tats[i].is_bad_word:
                 num_bad_words_dropped += 1
                 del tats[i]
@@ -289,8 +283,6 @@ class Twitter(KnucTatsCog):
         elif num_bad_words_dropped > 0:
             await ctx.send(f"{num_bad_words_dropped} tats were dropped for containing offensive words.")
         return tats
-
-
 
     async def get_selected_tats(self, ctx, cmd_text, flags):
 
