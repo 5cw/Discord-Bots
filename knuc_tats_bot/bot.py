@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 from constants import TOKEN
+from error_handler import ErrorHandler
 from message_handler import MessageHandler
 from twitter_commands import Twitter
 from admin_commands import Admin
@@ -17,11 +18,8 @@ cache = Cache()
 bot.add_cog(MessageHandler(bot, cache))
 bot.add_cog(Admin(bot, cache))
 bot.add_cog(Twitter(bot, cache))
+bot.add_cog(ErrorHandler(bot, cache))
 
-
-@bot.event
-async def on_ready():
-    print("knuc tats bot ready!")
 
 
 

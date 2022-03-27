@@ -36,7 +36,7 @@ class General(CurrencyCog):
             user = ctx.author
 
         bal = await self.cache.get_balance(user)
-        await ctx.send(f"{await self.cache.get_name(user)} has {bal:.2f} {self.plural_currency(bal)}")
+        await ctx.send(f"{await self.cache.get_name(user)} has {bal:.2f} {plural_currency(bal)}")
 
     @commands.command(name='pay', help=f'pay someone {PLURAL_CURRENCY_NAME.lower()}',
                       usage='(name) (amount)')
@@ -49,7 +49,7 @@ class General(CurrencyCog):
         amount = self.to_decimal(args[-1])
         if rec_user.id == ctx.author.id:
             await ctx.send(
-                f"Cool. You sent yourself {amount:.2f} {self.plural_currency(amount)}.\nCongratulations. You have the same amount of money.")
+                f"Cool. You sent yourself {amount:.2f} {plural_currency(amount)}.\nCongratulations. You have the same amount of money.")
             return
         send_balance = await self.cache.get_balance(ctx.author)
         rec_balance = await self.cache.get_balance(rec_user)

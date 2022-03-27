@@ -53,10 +53,9 @@ for gist in gh.gists():
 else:
     raise FileNotFoundError
 
-
-
+SPLIT = "|"
 PREFIXES = "$!%"
-HIST_NUM = 5
+HIST_DEFAULT = 5
 HIST_MAX = 20
 
 TIME_DICT = {
@@ -71,5 +70,3 @@ TIME_DICT['y'] = 365 * TIME_DICT['d']
 THOUSAND_YEARS_IN_SECS = TIME_DICT["y"] * 1000
 
 TWITTER_TIME_FORMAT = "%a %b %d %H:%M:%S %z %Y"
-
-BAD_WORD = 1000

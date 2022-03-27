@@ -33,7 +33,7 @@ class Admin(CurrencyCog):
             amount = new_bal - bal
         await self.cache.set_balance(user, new_bal)
         await self.cache.push_cache()
-        await ctx.send(f"Awarded {amount:.2f} {self.plural_currency(amount)} to {await self.cache.get_name(user)}")
+        await ctx.send(f"Awarded {amount:.2f} {plural_currency(amount)} to {await self.cache.get_name(user)}")
 
     @commands.has_permissions(manage_guild=True)
     @commands.command(name='ban', help='use to ban a user from the economy (and erase balance)',

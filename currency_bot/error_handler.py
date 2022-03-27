@@ -1,4 +1,4 @@
-from currency_cog import CurrencyCog
+from currency_cog import CurrencyCog, plural_currency
 from errors import UserBannedError, DecimalizationError
 from discord.ext import commands
 
@@ -25,13 +25,13 @@ class ErrorHandler(CurrencyCog):
             return
         elif isinstance(error, DecimalizationError):
             amount = self.sanitize(ctx, error.amount)
-            await ctx.send(f"{amount} is not a valid amount of {CurrencyCog.plural_currency(amount)}.")
+            await ctx.send(f"{amount} is not a valid amount of {plural_currency(amount)}.")
             return
         elif isinstance(error, commands.UserNotFound):
             name = self.sanitize(ctx, error.argument)
             await ctx.send(f"{name} is not a valid user.")
         else:
-            await (await self.bot.fetch_channel(900027403919839282)).send(str(error))
+            await (await self.bot.fetch_channel(944217254290137138)).send(str(error))
         raise error
 
     @commands.Cog.listener()

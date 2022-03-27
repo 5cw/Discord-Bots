@@ -48,7 +48,7 @@ class Admin(KnucTatsCog):
         except ValueError:
             stop = False
 
-        amount = self.to_seconds("".join(args))
+        amount = to_seconds("".join(args))
         if amount is None:
             await ctx.send("invalid amount of time.")
             return
@@ -80,7 +80,7 @@ class Admin(KnucTatsCog):
                 await ctx.send(f"{entity} is muted indefinitely. %mute -stop to unmute.")
                 return
 
-            await ctx.send(f"{entity} will be muted for {self.time_string(int(left))} longer.")
+            await ctx.send(f"{entity} will be muted for {time_string(int(left))} longer.")
             return
 
         if not admin:
@@ -103,6 +103,6 @@ class Admin(KnucTatsCog):
             await ctx.send(f"{entity} has been muted indefinitely. %mute -stop to unmute.")
             return
 
-        await ctx.send(f"{entity} has been muted for {self.time_string(amount)}.")
+        await ctx.send(f"{entity} has been muted for {time_string(amount)}.")
 
 

@@ -4,6 +4,14 @@ from errors import DecimalizationError, UserBannedError
 from constants import CURRENCY_NAME, PLURAL_CURRENCY_NAME
 import re
 
+
+def plural_currency(amt):
+    if amt != 1:
+        return PLURAL_CURRENCY_NAME
+    else:
+        return CURRENCY_NAME
+
+
 class CurrencyCog(commands.Cog):
     converter = commands.UserConverter()
 
@@ -54,8 +62,3 @@ class CurrencyCog(commands.Cog):
 
         return re.sub(r'<?(@|@!|#|@&|a?(:[a-zA-Z0-9_]+:))([0-9]+)>', sanitize_helper, input)
 
-    def plural_currency(self, amt):
-        if amt != 1:
-            return PLURAL_CURRENCY_NAME
-        else:
-            return CURRENCY_NAME
