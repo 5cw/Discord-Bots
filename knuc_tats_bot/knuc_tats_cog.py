@@ -8,6 +8,7 @@ from cache import Cache
 from obfuscate import obfuscate
 
 
+
 def to_seconds(parse: str):
     if parse == "":
         return -1
@@ -106,16 +107,16 @@ class KnucTatsCog(commands.Cog):
                 break
         max = self.cache.get_server_max_hands(message.guild.id)
         length = grapheme.length(wws)
-        valid = length > 0 and length % 8 == 0
+        valid = length > 0 and length % TWO_HANDS == 0
         if strict and valid:
 
             tally = 0
             for word in split_wws:
                 tally += grapheme.length(word)
-                if tally == 8:
+                if tally == TWO_HANDS:
                     tally = 0
                     max -= 1
-                elif tally > 8:
+                elif tally > TWO_HANDS:
                     valid = False
                     break
             if max < 0 or tally != 0:
@@ -123,8 +124,8 @@ class KnucTatsCog(commands.Cog):
         
         if valid:
             tat = ""
-            for i in range(0, grapheme.length(wws), 8):
-                tat += f"{grapheme.slice(wws, i, i + 4)} {grapheme.slice(wws, i + 4, i + 8)}\n"
+            for i in range(0, grapheme.length(wws), TWO_HANDS):
+                tat += f"{grapheme.slice(wws, i, i + ONE_HAND)} {grapheme.slice(wws, i + 4, i + TWO_HANDS)}\n"
             tat = tat[:-1]
             if not bad_word_found:
                 self.cache.push_recent(message, tat)

@@ -71,6 +71,19 @@ def extract_flags(args, flag_types):
     return ''.join(args), out
 
 
+async def drop_bad_words(ctx, tats):
+    num_bad_words_dropped = 0
+    for i in range(len(tats) - 1, -1, -1):
+        if tats[i].is_bad_word:
+            num_bad_words_dropped += 1
+            del tats[i]
+    if len(tats) == 0:
+        raise BadWordError("All" if num_bad_words_dropped > 1 else "Your")
+    elif num_bad_words_dropped > 0:
+        await ctx.send(f"{num_bad_words_dropped} tats were dropped for containing offensive words.")
+    return tats
+
+
 class Twitter(KnucTatsCog):
 
     def __init__(self, bot, cache):
@@ -123,7 +136,7 @@ class Twitter(KnucTatsCog):
         tats_display = "\n\n"
 
         if not bad_words:
-            to_tweet = await self.drop_bad_words(ctx, to_tweet)
+            to_tweet = await drop_bad_words(ctx, to_tweet)
 
         if dupes or drop:
             with_drops = await self.check_tweets(ctx, to_tweet, dupes, drop)
@@ -150,7 +163,7 @@ class Twitter(KnucTatsCog):
         if (not skip) or bad_words:  # don't want to allow someone to skip
             await ctx.send(f"You want to tweet {this_plural}? (y/n)" + tats_display)
             confirm = (await self.bot.wait_for('message', check=lambda
-                message: message.author.id == ctx.author.id and message.channel.id == ctx.channel.id)).content
+                    message: message.author.id == ctx.author.id and message.channel.id == ctx.channel.id)).content
         else:
             confirm = 'y'
 
@@ -189,7 +202,7 @@ class Twitter(KnucTatsCog):
 
         to_check = await self.get_selected_tats(ctx, cmd_text, flags)
         to_check = [t for t in to_check if not t.is_bad_word]
-        if to_check == None:
+        if to_check is None:
             return
 
         await self.check_tweets(ctx, to_check)
@@ -230,10 +243,9 @@ class Twitter(KnucTatsCog):
         latest_plus = (self.cache.latest + datetime.timedelta(seconds=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         def get_clean(text):
-            old = text
             if text[:3] == "RT ":
                 text = text[3:]
-            text = re.sub(r"(?:@|(?:https:\/\/t\.co\/))[^\s]+", "", text)
+            text = re.sub(r"(?:@|https://t\.co/)[^\s]+", "", text)
             text = re.sub(r" *\n *", "\n", text)
             text = re.sub(r" +|\t", " ", text)
             text = re.sub(r"^\s|\s$", "", text)
@@ -272,18 +284,6 @@ class Twitter(KnucTatsCog):
 
         self.cache.save(tweets=True)
 
-    async def drop_bad_words(self, ctx, tats):
-        num_bad_words_dropped = 0
-        for i in range(len(tats) - 1, -1, -1):
-            if tats[i].is_bad_word:
-                num_bad_words_dropped += 1
-                del tats[i]
-        if len(tats) == 0:
-            raise BadWordError("All" if num_bad_words_dropped > 1 else "Your")
-        elif num_bad_words_dropped > 0:
-            await ctx.send(f"{num_bad_words_dropped} tats were dropped for containing offensive words.")
-        return tats
-
     async def get_selected_tats(self, ctx, cmd_text, flags):
 
         cmd_tats = self.batch_check_and_format(ctx.message, cmd_text)
@@ -317,7 +317,7 @@ class Twitter(KnucTatsCog):
         elif hist_flag is not None:
             hist = hist_flag
         else:
-            return []
+            hist = 1
 
         selected = []
 
