@@ -227,7 +227,7 @@ class Twitter(KnucTatsCog):
                 untweeted.append(tat)
             elif prnt:
                 plural = "s" if len(tweets) != 1 else ""
-                block = tat.replace('\n', '\n> ')
+                block = tat.text.replace('\n', '\n> ')
                 fmt_tweets = "\n".join(tweets)
                 await ctx.send(f"{self.USERNAME} has tweeted \n> "
                                f"{block} \n"
