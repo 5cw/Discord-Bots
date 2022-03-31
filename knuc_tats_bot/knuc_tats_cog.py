@@ -1,6 +1,6 @@
 import dataclasses
 
-from constants import BANNED_WORDS, PREFIXES, THOUSAND_YEARS_IN_SECS, TIME_DICT, SPLIT
+from constants import BANNED_WORDS, PREFIXES, THOUSAND_YEARS_IN_SECS, TIME_DICT, SPLIT, ONE_HAND, TWO_HANDS
 from discord.ext import commands
 import re
 import grapheme
