@@ -125,7 +125,7 @@ class KnucTatsCog(commands.Cog):
         if valid:
             tat = ""
             for i in range(0, grapheme.length(wws), TWO_HANDS):
-                tat += f"{grapheme.slice(wws, i, i + ONE_HAND)} {grapheme.slice(wws, i + 4, i + TWO_HANDS)}\n"
+                tat += f"{grapheme.slice(wws, i, i + ONE_HAND)} {grapheme.slice(wws, i + ONE_HAND, i + TWO_HANDS)}\n"
             tat = tat[:-1]
             if not bad_word_found:
                 self.cache.push_recent(message, tat)

@@ -3,7 +3,7 @@ import json
 import discord
 import grapheme
 
-from constants import MAX_HAND_SETS, GIST, TWITTER_TIME_FORMAT, MESSAGE_LIMIT, HIST_MAX
+from constants import MAX_HAND_SETS, GIST, TWITTER_TIME_FORMAT, MESSAGE_LIMIT, HIST_MAX, ONE_HAND, TWO_HANDS
 from time import time
 import datetime
 
@@ -80,7 +80,7 @@ class Cache:
             def match_tat(text):
                 tat = True
                 for line in text.split('\n'):
-                    tat &= (grapheme.slice(line, 4, 5) == ' ' and grapheme.length(line) == 9)
+                    tat &= (grapheme.slice(line, ONE_HAND, ONE_HAND + 1) == ' ' and grapheme.length(line) == TWO_HANDS + 1)
                 return tat
             for msg in messages:
                 if msg.author.id == bot.id and match_tat(msg.content):
