@@ -31,7 +31,7 @@ max_string = os.environ.get('MAX_HAND_SETS')
 
 MESSAGE_LIMIT = os.environ.get("MESSAGE_LIMIT")
 
-ONE_HAND = os.environ.get("ONE_HAND") or 4
+ONE_HAND = int(os.environ.get("ONE_HAND")) or 4
 TWO_HANDS = 2 * ONE_HAND
 
 
