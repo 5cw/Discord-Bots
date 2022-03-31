@@ -1,4 +1,4 @@
-from constants import BANNED_WORDS, PREFIXES, THOUSAND_YEARS_IN_SECS, TIME_DICT
+from constants import BANNED_WORDS, PREFIXES, THOUSAND_YEARS_IN_SECS, TIME_DICT, FINGERS_ONE_HAND, FINGERS_TWO_HANDS
 from discord.ext import commands
 import re
 import grapheme
@@ -88,13 +88,13 @@ class KnucTatsCog(commands.Cog):
 
         max = self.cache.get_server_max_hands(message.guild.id)
         length = grapheme.length(wws)
-        valid = length > 0 and length % 8 == 0
+        valid = length > 0 and length % FINGERS_TWO_HANDS == 0
         if strict and valid:
 
             tally = 0
             for word in split_wws:
                 tally += grapheme.length(word)
-                if tally == 8:
+                if tally == FINGERS_TWO_HANDS:
                     tally = 0
                     max -= 1
                 elif tally > 8:
@@ -105,8 +105,9 @@ class KnucTatsCog(commands.Cog):
         
         if valid:
             tat = ""
-            for i in range(0, grapheme.length(wws), 8):
-                tat += f"{grapheme.slice(wws, i, i + 4)} {grapheme.slice(wws, i + 4, i + 8)}\n"
+            for i in range(0, grapheme.length(wws), FINGERS_TWO_HANDS):
+                tat += f"{grapheme.slice(wws, i, i + FINGERS_ONE_HAND)} " \
+                       f"{grapheme.slice(wws, i + FINGERS_ONE_HAND, i + FINGERS_TWO_HANDS)}\n"
             tat = tat[:-1]
 
             self.cache.push_recent(message, tat)

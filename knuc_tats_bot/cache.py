@@ -18,6 +18,7 @@ class Cache:
         self.tweets = None
         self.latest = None
         self.bot_id = None
+        self.scheduled = None
         properties = GIST.files.get('properties.json')
         if properties:
             try:
@@ -25,6 +26,7 @@ class Cache:
                 self.server_max_hands = data.get('server_max_hands') or {}
                 self.server_recent_tat = data.get('server_recent_tat') or {}
                 self.server_disabled = data.get('server_disabled') or {}
+                self.scheduled = data.get('scheduled') or {}
             except json.JSONDecodeError:
                 print("malformed properties.json")
         s = GIST.files['tweet-bin.json'].content()
@@ -133,7 +135,8 @@ class Cache:
             properties_string = json.dumps({
                 'server_max_hands': self.server_max_hands,
                 'server_recent_tat': self.server_recent_tat,
-                'server_disabled': self.server_disabled
+                'server_disabled': self.server_disabled,
+                'scheduled': self.scheduled
             }, indent=2)
             files['properties.json'] = {'content': properties_string}
         GIST.edit(files=files)
@@ -143,3 +146,11 @@ class Cache:
         for line in string.split('\n'):
             tat &= (grapheme.slice(line, 4, 5) == ' ' and grapheme.length(line) == 9)
         return tat
+
+    def add_to_schedule(self, date, tats):
+        str_date = date.strftime(TWITTER_TIME_FORMAT)
+        if str_date in self.scheduled.keys():
+            self.scheduled[str_date].extend(tats)
+        else:
+            self.scheduled[str_date] = tats
+
