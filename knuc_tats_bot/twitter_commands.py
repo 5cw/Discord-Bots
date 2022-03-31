@@ -98,7 +98,7 @@ class Twitter(KnucTatsCog):
 
     @commands.command(name="dds", help='Alias of %tweet -dd -s',
                       usage='(knuc tats) to tweet text in command, leave blank to tweet most recent tat in channel,')
-    async def dds(self, ctx, *, raw=None):
+    async def dds(self, ctx, *, raw=""):
         await self.tweet(ctx, raw=" -dd -s " + raw)
 
     @commands.command(name="tweet", help='People with the knuc tats login use to tweet most recent tat',
