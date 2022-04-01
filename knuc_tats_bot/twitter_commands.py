@@ -174,19 +174,18 @@ class Twitter(KnucTatsCog):
                                    f"if you're sure you wish to tweet this, type \"confirm\" now.")
                     bad_word_confirm = (await self.bot.wait_for('message', check=lambda
                         message: message.author.id == ctx.author.id and message.channel.id == ctx.channel.id)).content
-                else:
-                    bad_word_confirm = "confirm"
-                if bad_word_confirm.lower() == "confirm":
-                    try:
-                        response = self.client.create_tweet(text=tw.text)
-                        await ctx.send(
-                            f"Tweet successful!\nhttps://twitter.com/{self.USERNAME}/status/{response['data']['id']}")
-                        return
-                    except tweepy.TweepyException as e:
-                        print(e)
-                        await ctx.send(f"Tweet failed. Error code: {e}")
-                        return
+                    if bad_word_confirm.lower() != "confirm":
+                        break
 
+                try:
+                    response = self.client.create_tweet(text=tw.text)
+                    await ctx.send(
+                        f"Tweet successful!\nhttps://twitter.com/{self.USERNAME}/status/{response['data']['id']}")
+                except tweepy.TweepyException as e:
+                    print(e)
+                    await ctx.send(f"Tweet failed. Error code: {e}")
+            else:
+                return
         await ctx.send("Tweet cancelled.")
 
     @commands.command(name="check", help='Use to see if a knuc tat was posted on the twitter.',
