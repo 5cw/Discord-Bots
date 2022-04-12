@@ -135,13 +135,14 @@ class Twitter(KnucTatsCog):
         to_tweet = [tweet for tweet in to_tweet if not len(tweet.text) > 240]
         tats_display = "\n\n"
 
-        if not bad_words:
-            to_tweet = await drop_bad_words(ctx, to_tweet)
-
         if dupes or drop:
             with_drops = await self.check_tweets(ctx, to_tweet, dupes, drop)
             if drop:
                 to_tweet = with_drops
+
+        if not bad_words:
+            to_tweet = await drop_bad_words(ctx, to_tweet)
+
         if not dupes:
             tats_display = "\n"
             for tweet in to_tweet:
@@ -234,6 +235,11 @@ class Twitter(KnucTatsCog):
                                f"{fmt_tweets}")
                 if drop:
                     await ctx.send("Dropping.")
+
+        num_dropped = len(tats) - len(untweeted)
+        if num_dropped > 0 and not prnt:
+            plural = "s" if num_dropped != 1 else ""
+            ctx.send(f"Dropped {num_dropped} duplicate{plural}.")
         return untweeted
 
     def update_tweets(self):
@@ -284,10 +290,13 @@ class Twitter(KnucTatsCog):
         self.cache.save(tweets=True)
 
     async def get_selected_tats(self, ctx, cmd_text, flags):
-
-        cmd_tats = self.batch_check_and_format(ctx.message, cmd_text)
-        if len(cmd_tats) > 0:
-            return cmd_tats
+        if cmd_text != "":
+            cmd_tats = self.batch_check_and_format(ctx.message, cmd_text)
+            if len(cmd_tats) > 0:
+                return cmd_tats
+            else:
+                ctx.send("Not valid knuc tats.")
+                return None
 
         if ctx.message.reference is not None:
             reply = ctx.message.reference.cached_message
