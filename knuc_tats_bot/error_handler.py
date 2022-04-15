@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 
@@ -35,6 +36,8 @@ class BadWordError(Exception):
 
 class ErrorHandler(KnucTatsCog):
 
+    rate_limited = False
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.CommandInvokeError):
@@ -48,6 +51,8 @@ class ErrorHandler(KnucTatsCog):
         elif isinstance(error, BadWordError) or isinstance(error, FlagError):
             await ctx.send(error)
             return
+        elif isinstance(error, discord.HTTPException):
+            print(error.response)
         else:
             await (await self.bot.fetch_channel(944217254290137138)).send(str(error))
         raise error

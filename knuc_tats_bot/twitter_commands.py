@@ -295,7 +295,7 @@ class Twitter(KnucTatsCog):
             if len(cmd_tats) > 0:
                 return cmd_tats
             else:
-                ctx.send("Not valid knuc tats.")
+                await ctx.send("Not valid knuc tats.")
                 return None
 
         if ctx.message.reference is not None:
