@@ -4,7 +4,7 @@ from discord.ext import commands
 
 from knuc_tats_cog import KnucTatsCog
 
-class FlagError(Exception):
+class KnucTatsError(Exception):
 
     def __init__(self, message: str, *args: object) -> None:
         self.message = message
@@ -34,6 +34,12 @@ class BadWordError(Exception):
 
     contextual_string: str
 
+class DroppedAllError(KnucTatsError):
+    pass
+
+class FlagError(KnucTatsError):
+    pass
+
 class ErrorHandler(KnucTatsCog):
 
     rate_limited = False
@@ -48,7 +54,7 @@ class ErrorHandler(KnucTatsCog):
         elif isinstance(error, commands.ArgumentParsingError):
             await ctx.send("Nice try, Sherlock SQL Injection.")
             return
-        elif isinstance(error, BadWordError) or isinstance(error, FlagError):
+        elif isinstance(error, BadWordError) or isinstance(error, FlagError) or isinstance(error, DroppedAllError):
             await ctx.send(error)
             return
         elif isinstance(error, discord.HTTPException):

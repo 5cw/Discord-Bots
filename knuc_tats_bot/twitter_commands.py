@@ -5,7 +5,7 @@ from discord.ext import commands, tasks
 from knuc_tats_cog import KnucTatsCog, KnucTats
 from constants import KNUC_TATS_LOGIN_USERS, TWT_BEARER_TOKEN, TWT_API_KEY, TWT_API_SECRET, TWT_ACCESS_TOKEN, \
     TWT_ACCESS_SECRET, TWITTER_TIME_FORMAT, HIST_DEFAULT, HIST_MAX
-from error_handler import BadWordError, FlagError
+from error_handler import BadWordError, FlagError, DroppedAllError
 from typing import Optional, get_args, get_origin
 import tweepy
 import re
@@ -236,10 +236,16 @@ class Twitter(KnucTatsCog):
                 if drop:
                     await ctx.send("Dropping.")
 
+        if len(untweeted) == 0:
+            plural = "s" if len(tats) != 1 else ""
+            your = "All of your" if len(tats) != 1 else "Your"
+            raise DroppedAllError(f"{your} tats were duplicate{plural}. Aborting.")
+
         num_dropped = len(tats) - len(untweeted)
+
         if num_dropped > 0 and not prnt:
             plural = "s" if num_dropped != 1 else ""
-            ctx.send(f"Dropped {num_dropped} duplicate{plural}.")
+            await ctx.send(f"Dropped {num_dropped} duplicate{plural}.")
         return untweeted
 
     def update_tweets(self):
